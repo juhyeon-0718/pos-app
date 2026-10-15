@@ -1,39 +1,27 @@
 // D-15: POST /orders는 Idempotency-Key(UUID) 헤더가 필수다.
 // 같은 주문 시도(네트워크 재시도, 버튼 중복 클릭)는 같은 키를 재사용해야
 // 서버가 기존 주문을 그대로 반환한다. 새 주문 시도는 새 키를 발급한다.
+//
+// 필드명/엔드포인트/헤더는 docs/api/openapi.yaml(계약)에서 생성한 schema.ts를
+// 그대로 쓴다. 손으로 타입을 다시 쓰지 않는다 — 계약이 바뀌면
+// `npm run gen:api`로 schema.ts를 재생성해서 타입 에러로 drift를 잡는다.
 
-import type { OrderStatus, ItemStatus } from "../constants/status";
+import type { components } from "./schema";
 
+export type Order = components["schemas"]["Order"];
+export type ErrorResponse = components["schemas"]["ErrorResponse"];
+
+const BASE_URL = "/api/v1";
 const IDEMPOTENCY_KEY_STORAGE_PREFIX = "pos:idempotency-key:";
+const IDEMPOTENCY_KEY_MISMATCH = "IDEMPOTENCY_KEY_MISMATCH";
 
-export interface OrderItemInput {
-  menuItemId: string;
-  quantity: number;
+export interface CreateOrderRequestItem {
+  menu_id: string;
+  qty: number;
 }
 
 export interface CreateOrderRequest {
-  tableToken: string;
-  items: OrderItemInput[];
-}
-
-export interface StockWarning {
-  ingredientId: string;
-  currentStock: number;
-  requiredAmount: number;
-}
-
-export interface OrderItemResponse {
-  id: string;
-  menuItemId: string;
-  quantity: number;
-  status: ItemStatus;
-}
-
-export interface OrderResponse {
-  id: string;
-  status: OrderStatus;
-  items: OrderItemResponse[];
-  stockWarnings: StockWarning[];
+  items: CreateOrderRequestItem[];
 }
 
 /**
@@ -55,11 +43,20 @@ export function clearIdempotencyKey(draftId: string): void {
   sessionStorage.removeItem(`${IDEMPOTENCY_KEY_STORAGE_PREFIX}${draftId}`);
 }
 
+async function parseErrorBody(res: Response): Promise<ErrorResponse | null> {
+  try {
+    return (await res.json()) as ErrorResponse;
+  } catch {
+    return null;
+  }
+}
+
 export async function createOrder(
   draftId: string,
+  tableSessionToken: string,
   payload: CreateOrderRequest,
-  baseUrl = "/api",
-): Promise<OrderResponse> {
+  baseUrl = BASE_URL,
+): Promise<Order> {
   const idempotencyKey = getOrCreateIdempotencyKey(draftId);
 
   const res = await fetch(`${baseUrl}/orders`, {
@@ -67,17 +64,21 @@ export async function createOrder(
     headers: {
       "Content-Type": "application/json",
       "Idempotency-Key": idempotencyKey,
+      "X-Table-Session-Token": tableSessionToken,
     },
     body: JSON.stringify(payload),
   });
 
-  if (res.status === 422) {
-    // 같은 키로 다른 본문을 보냄: 새 주문 시도로 간주하고 키를 새로 발급해 재시도하게 한다.
-    clearIdempotencyKey(draftId);
-    throw new Error("IDEMPOTENCY_KEY_CONFLICT");
-  }
-
   if (!res.ok) {
+    if (res.status === 422) {
+      const body = await parseErrorBody(res);
+      // FastAPI는 요청 검증 실패에도 422를 반환한다. 같은 키·다른 본문일 때만
+      // (code === IDEMPOTENCY_KEY_MISMATCH) 키를 버린다 — 그 외 검증 오류에서
+      // 키를 지우면 다음 재시도가 새 키로 나가 중복 주문이 생긴다.
+      if (body?.code === IDEMPOTENCY_KEY_MISMATCH) {
+        clearIdempotencyKey(draftId);
+      }
+    }
     throw new Error(`CREATE_ORDER_FAILED: ${res.status}`);
   }
 
@@ -87,11 +88,11 @@ export async function createOrder(
 }
 
 export async function fetchMyOrders(
-  tableToken: string,
-  baseUrl = "/api",
-): Promise<OrderResponse[]> {
+  tableSessionToken: string,
+  baseUrl = BASE_URL,
+): Promise<Order[]> {
   const res = await fetch(`${baseUrl}/orders/mine`, {
-    headers: { Authorization: `TableToken ${tableToken}` },
+    headers: { "X-Table-Session-Token": tableSessionToken },
   });
   if (!res.ok) {
     throw new Error(`FETCH_MY_ORDERS_FAILED: ${res.status}`);
