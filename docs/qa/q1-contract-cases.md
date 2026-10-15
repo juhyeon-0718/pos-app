@@ -27,8 +27,8 @@ Authorization: tableToken <valid>
 
 ### 기대 응답
 - 두 요청 모두 `201 Created` 반환
-- 두 응답의 `order.id` 동일
-- `stock_warnings` 없음 (재고 충분)
+- 두 응답의 `id` 동일 (Order 스키마 기준)
+- `stock_warnings` 빈 배열 또는 없음 (재고 충분)
 
 ### 기대 DB 상태
 | 테이블 | 조건 |
@@ -94,7 +94,7 @@ Authorization: Bearer *** 또는 owner_token>
 ### 기대 응답
 ```json
 HTTP 200 OK
-{ "order_id": "o_1", "status": "cancelled" }
+{ "id": "o_1", "status": "cancelled", "items": [...], "stock_warnings": [] }
 ```
 
 ### 기대 DB 상태
@@ -128,7 +128,7 @@ Authorization: Bearer ***
 ### 기대 응답
 ```json
 HTTP 200 OK
-{ "order_id": "o_2", "status": "cancelled" }
+{ "id": "o_2", "status": "cancelled", "items": [...], "stock_warnings": [] }
 ```
 
 ### 기대 DB 상태
@@ -243,13 +243,18 @@ Authorization: tableToken <valid>
 ```json
 HTTP 201 Created
 {
-  "order_id": "o_new",
+  "id": "o_new",
+  "table_id": "t_1",
   "status": "received",
+  "total_amount": 15000,
+  "created_at": "2026-10-15T10:00:00Z",
+  "items": [...],
   "stock_warnings": [
     {
       "ingredient_id": "ing_Y",
+      "name": "재료Y",
       "current_stock": 3,
-      "required_quantity": 5
+      "required": 5
     }
   ]
 }
@@ -263,7 +268,7 @@ HTTP 201 Created
 
 ### SSE 이벤트 검증
 - 직원/사장 SSE 구독 채널에 `stock.warning` 이벤트 발생
-- 이벤트 data에 `ingredient_id`, `current_stock`, `required_quantity` 포함
+- 이벤트 data에 `ingredient_id`, `current_stock`, `required` 포함
 
 ---
 
