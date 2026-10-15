@@ -1,7 +1,7 @@
 # Q1 계약 테스트 케이스 명세
 
-기준 결정: D-14~D-18 (2026-10-15)  
-대상 엔드포인트: `POST /orders`, `POST /orders/{order_id}/status`, `POST /kitchen/items/{item_id}/status`
+기준 결정: D-14~D-19 (2026-10-15)  
+대상 엔드포인트: `POST /orders`, `PATCH /orders/{order_id}/status`, `PATCH /kitchen/items/{item_id}/status`
 
 ---
 
@@ -85,8 +85,8 @@ HTTP 422 Unprocessable Entity
 
 ### 입력
 ```
-POST /orders/o_1/status
-Authorization: Bearer <staff_token 또는 owner_token>
+PATCH /orders/o_1/status
+Authorization: Bearer *** 또는 owner_token>
 
 { "status": "cancelled" }
 ```
@@ -102,13 +102,14 @@ HTTP 200 OK
 |---|---|
 | `orders` | `o_1` status = `cancelled` |
 | `stock_movements` | reason=`cancel_restore`, ingredient_id=X, quantity=+2 레코드 추가 |
+| `stock_movements` | reason=`disposal` 레코드 **없음** (조리 전 취소) |
 | 재료 X 현재고 | 10 복원 |
 
 ---
 
 ## TC-04 조리 후 취소 — 재고 복원 없음, 폐기 기록 (D-16, D-06)
 
-**목적:** 주문이 `cooking` 이상일 때 취소하면 재고는 복원하지 않고 `stock_movements`에 폐기 기록이 남는다.
+**목적:** 주문이 `cooking` 이상일 때 취소하면 재고는 복원하지 않고, `cancel_restore`와 `disposal`을 한 쌍으로 기록해 원장 합계(D-05 기준)로 현재고를 유지한다 (D-19).
 
 ### 사전 조건
 - 주문 `o_2` 상태: `cooking`
@@ -118,8 +119,8 @@ HTTP 200 OK
 
 ### 입력
 ```
-POST /orders/o_2/status
-Authorization: Bearer <owner_token>
+PATCH /orders/o_2/status
+Authorization: Bearer ***
 
 { "status": "cancelled" }
 ```
@@ -134,8 +135,11 @@ HTTP 200 OK
 | 테이블 | 조건 |
 |---|---|
 | `orders` | `o_2` status = `cancelled` |
-| `stock_movements` | reason=`disposal`, ingredient_id=X, quantity=-2 레코드 추가 (복원 레코드 없음) |
-| 재료 X 현재고 | 8 유지 (변화 없음) |
+| `stock_movements` | reason=`cancel_restore`, ingredient_id=X, quantity=+2 레코드 추가 |
+| `stock_movements` | reason=`disposal`, ingredient_id=X, quantity=-2 레코드 추가 |
+| 재료 X 현재고 | 8 유지 (`cancel_restore +2` + `disposal -2` = 순 변화 0, D-19) |
+
+> 두 레코드는 같은 트랜잭션에서 생성된다. 원장 합계 = -2(주문 차감) +2(복원) -2(폐기) = -2 → 현재고 10-2 = **8**.
 
 ---
 
@@ -149,8 +153,8 @@ HTTP 200 OK
 
 ### 입력
 ```
-POST /orders/o_2/status
-Authorization: Bearer <staff_token>
+PATCH /orders/o_2/status
+Authorization: Bearer ***
 
 { "status": "cancelled" }
 ```
@@ -182,8 +186,8 @@ HTTP 403 Forbidden
 
 **입력**
 ```
-POST /kitchen/items/i_1/status
-Authorization: Bearer <kitchen_token>
+PATCH /kitchen/items/i_1/status
+Authorization: Bearer ***
 
 { "status": "cooking" }
 ```
@@ -203,8 +207,8 @@ HTTP 200 OK
 ### 시나리오 B — 모든 항목 완료 → 주문 자동 전이 검증
 
 **입력 (순서대로)**
-1. `POST /kitchen/items/i_1/status` → `{ "status": "done" }`
-2. `POST /kitchen/items/i_2/status` → `{ "status": "done" }`
+1. `PATCH /kitchen/items/i_1/status` → `{ "status": "done" }`
+2. `PATCH /kitchen/items/i_2/status` → `{ "status": "done" }`
 
 **기대 DB 상태 (2번 요청 후)**
 | 테이블 | 조건 |
@@ -212,7 +216,7 @@ HTTP 200 OK
 | `order_items` | i_1, i_2 모두 status = `done` |
 | `orders` | `o_3` status = `cooking` 유지 (`served`는 직원 수동 처리) |
 
-> `served` 전이는 직원이 `POST /orders/o_3/status { "status": "served" }`로 수동 처리.
+> `served` 전이는 직원이 `PATCH /orders/o_3/status { "status": "served" }`로 수동 처리.
 
 ---
 
@@ -267,6 +271,6 @@ HTTP 201 Created
 
 - 모든 TC에서 `Idempotency-Key`는 UUID v4 형식이어야 한다.
 - 상태 전이는 영문 enum(D-18): 주문 `received`/`cooking`/`served`/`paid`/`cancelled`, 항목 `pending`/`cooking`/`done`.
-- 취소 상태 전이 엔드포인트: `POST /orders/{order_id}/status` (PATCH 아님).
+- 취소 상태 전이 엔드포인트: `PATCH /orders/{order_id}/status`.
 - DB 상태 검증은 SEED=42 고정 테스트 데이터 기준으로 한다(D-12).
 - TC-03~TC-05는 조리 단계 판단 기준이 "항목 상태에 `cooking` 또는 `done`이 하나라도 있는가"임을 주의한다.
