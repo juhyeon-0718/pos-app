@@ -113,7 +113,7 @@
 - 날짜: 2026-10-16
 - 결정: 호스트에 PostgreSQL 16을 직접 설치하고 `pos_app_dev`(개발)와 `pos_app_test`(pytest) DB를 둔다. pytest는 PostgreSQL로만 돌리고 SQLite 기본값은 제거한다. 접속 정보는 `DATABASE_URL` 환경변수로 받고 `.env`는 커밋하지 않는다(`.env.example`만 커밋).
 - 이유: D-09 partial unique index와 동시 차감 시 `SELECT ... FOR UPDATE` 행 잠금(TC-01)은 SQLite에서 검증할 수 없어 false positive가 생긴다. D-10 스택을 바꾸는 결정이 아니고, Docker보다 설치 요건(WSL2, 관리자 권한)이 적다.
-- 확인: 호스트 설치 권한은 정주현 확인 대기.
+- 확인: 정주현 (2026-10-16, 호스트 설치는 정주현이 직접 진행)
 
 ## D-22 B1 인증 범위
 - 날짜: 2026-10-16
