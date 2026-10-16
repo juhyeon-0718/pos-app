@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.models.base import gen_id
 from app.models.enums import COOKING_STAGE_ITEM_STATUSES, ItemStatus, OrderStatus, Role, StockMovementReason
 from app.models.idempotency_key import IdempotencyKey
 from app.models.ingredient import Ingredient
@@ -82,7 +83,7 @@ def create_order(
 
     # 신규 생성 시도. 동시 요청(TC-01) 대비: idempotency_keys.key 유니크 제약으로
     # 레이스를 막고, 경쟁에서 진 요청은 IntegrityError를 잡아 승자의 주문을 반환한다.
-    order = Order(table_id=table_id, status=OrderStatus.received.value, total_amount=0)
+    order = Order(id=gen_id("o"), table_id=table_id, status=OrderStatus.received.value, total_amount=0)
     db.add(order)
 
     total_amount = 0.0
