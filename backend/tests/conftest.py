@@ -42,7 +42,7 @@ if "postgresql" not in _DATABASE_URL:
         allow_module_level=True,
     )
 
-# skip 이후 import — config.py가 이미 로드된 경우를 대비해 강제 교체
+# skip 이후 import — config.py 모듈 로드 전에 DATABASE_URL 확정
 os.environ["DATABASE_URL"] = _DATABASE_URL
 
 import app.models_all  # noqa: F401, E402 — Base.metadata에 모든 테이블 등록
@@ -53,7 +53,7 @@ _engine = create_engine(_DATABASE_URL)
 _SessionLocal = sessionmaker(bind=_engine, autoflush=False, expire_on_commit=False)
 
 # 테스트 실행 전 1회: 테이블이 없으면 생성
-# (B1 전환 완료 후에는 alembic upgrade head로 대체한다)
+# (B1 alembic 전환 완료 후에는 alembic upgrade head로 대체한다)
 Base.metadata.create_all(_engine)
 
 _TRUNCATE = text("""
@@ -99,6 +99,6 @@ def db():
 
 @pytest.fixture
 def client():
-    """FastAPI TestClient (동기). 스레드에서 공유 가능."""
+    """FastAPI TestClient (동기). threading.Thread에서 공유 가능."""
     with TestClient(fastapi_app, raise_server_exceptions=False) as c:
         yield c
