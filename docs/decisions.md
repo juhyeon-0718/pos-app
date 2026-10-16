@@ -108,3 +108,14 @@
 - 날짜: 2026-10-15
 - 결정: GitHub 인증이 복구될 때까지 테크 리드가 로컬에서 브랜치를 검증한 뒤 `--no-ff`로 로컬 main에 머지한다. 리뷰 기록은 Slack 스레드에 남긴다. 인증이 복구되면 main과 작업 브랜치를 push하고, 이후 작업부터 PR 절차(D-13)로 돌아간다.
 - 이유: 계약(B0) 머지가 모든 작업의 선행 조건이라 인증 문제로 전체 일정이 멈추는 것을 막기 위해서다. 로컬 머지는 push 전까지 되돌릴 수 있다.
+
+## D-21 개발·테스트 DB 환경
+- 날짜: 2026-10-16
+- 결정: 호스트에 PostgreSQL 16을 직접 설치하고 `pos_app_dev`(개발)와 `pos_app_test`(pytest) DB를 둔다. pytest는 PostgreSQL로만 돌리고 SQLite 기본값은 제거한다. 접속 정보는 `DATABASE_URL` 환경변수로 받고 `.env`는 커밋하지 않는다(`.env.example`만 커밋).
+- 이유: D-09 partial unique index와 동시 차감 시 `SELECT ... FOR UPDATE` 행 잠금(TC-01)은 SQLite에서 검증할 수 없어 false positive가 생긴다. D-10 스택을 바꾸는 결정이 아니고, Docker보다 설치 요건(WSL2, 관리자 권한)이 적다.
+- 확인: 호스트 설치 권한은 정주현 확인 대기.
+
+## D-22 B1 인증 범위
+- 날짜: 2026-10-16
+- 결정: B1은 stub 인증(`X-Role` 헤더)을 유지하고 `ENV`가 `dev` 또는 `test`일 때만 켠다. 그 외 환경에서는 앱 시작을 실패시킨다. JWT(`POST /auth/login`)는 B2에서 구현하고, stub 삭제를 B2 완료 조건에 넣는다. 인증 스킴(`securitySchemes`)이 바뀌면 프론트에 먼저 알린다.
+- 이유: B1 범위를 늘리면 일정이 밀린다. TC-03~TC-05 권한 검증은 stub으로도 가능하고, 프론트는 Prism 목 서버로 작업해 영향이 없다.
