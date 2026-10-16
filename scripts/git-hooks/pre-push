@@ -1,0 +1,45 @@
+#!/bin/sh
+# pos-app pre-push guard (D-27)
+# 차단: main/master 직접 push, 원격 브랜치 삭제, force push(non-fast-forward)
+# 예외: 정주현이 직접 main을 올릴 때만  ALLOW_MAIN_PUSH=1 git push origin main
+# 설치: sh scripts/git-hooks/install.sh  (모든 워크트리에 공통 적용)
+
+remote="$1"
+zero=0000000000000000000000000000000000000000
+fail=0
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  branch="${remote_ref#refs/heads/}"
+
+  # 1) 원격 브랜치 삭제
+  case "$local_sha" in
+    *[!0]*) ;;
+    *)
+      echo "[pre-push] 거부: 원격 브랜치 삭제 ($remote_ref). 필요하면 민준에게 요청하세요." >&2
+      fail=1; continue ;;
+  esac
+
+  # 2) main/master 직접 push
+  case "$branch" in
+    main|master)
+      if [ "$ALLOW_MAIN_PUSH" != "1" ]; then
+        echo "[pre-push] 거부: $branch 직접 push 금지. 작업 브랜치를 push하고 PR을 여세요." >&2
+        fail=1; continue
+      fi ;;
+  esac
+
+  # 3) force push (원격 커밋이 로컬 커밋의 조상이 아니면 이력 덮어쓰기)
+  case "$remote_sha" in
+    *[!0]*)
+      if ! git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
+        echo "[pre-push] 거부: 원격 $branch 에 로컬에 없는 커밋이 있습니다. git fetch 후 rebase/merge 하세요." >&2
+        fail=1; continue
+      fi
+      if ! git merge-base --is-ancestor "$remote_sha" "$local_sha"; then
+        echo "[pre-push] 거부: force push(이력 덮어쓰기) 금지 ($branch)." >&2
+        fail=1; continue
+      fi ;;
+  esac
+done
+
+exit $fail

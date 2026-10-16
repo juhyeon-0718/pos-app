@@ -154,3 +154,9 @@
 - 결정: 워크트리 4개를 `C:/juehyeon/pos-app/` 아래 `main/`(main), `back/`(이서연), `front/`(박지호), `qa/`(최유나)로 둔다. 각 에이전트 프로필의 `terminal.cwd`는 해당 경로로 맞춘다. main 작업 폴더 안에 다른 워크트리를 두지 않는다.
 - 이유: 프로젝트 폴더를 한곳에 모으면서, 워크트리를 서로 독립 폴더로 유지해 테스트·검색 중복과 실수 커밋을 막는다.
 - 확인: 정주현 (2026-10-16)
+
+## D-27 로컬 push 차단 hook
+- 날짜: 2026-10-16
+- 결정: `scripts/git-hooks/pre-push`로 main/master 직접 push, 원격 브랜치 삭제, force push를 막는다. `sh scripts/git-hooks/install.sh`로 공통 `.git/hooks`에 설치해 워크트리 4개에 함께 적용한다. 예외는 정주현이 `ALLOW_MAIN_PUSH=1`을 붙여 main을 올릴 때뿐이다. D-20의 인증 복구 후 main push도 이 예외로 정주현이 실행한다.
+- 이유: 봇들이 같은 PC의 같은 GitHub 자격증명을 쓰므로, 봇 실수나 인젝션으로 main 이력이 바뀌는 것을 로컬에서 먼저 막는다. GitHub 보호 규칙과 함께 쓰는 1차 방어선이다.
+- 확인: 정주현 (2026-10-16)
