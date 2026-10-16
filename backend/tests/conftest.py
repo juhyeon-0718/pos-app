@@ -1,7 +1,7 @@
 """
 Q2 계약 테스트 공통 픽스처.
 
-PostgreSQL DATABASE_URL이 없으면 전체 스킵합니다 (D-21).
+PostgreSQL 18 DATABASE_URL이 없으면 전체 스킵합니다 (D-21).
 테스트 격리: 각 테스트 전후 관련 테이블 TRUNCATE.
 동시성 TC(TC-01)는 실제 커밋이 필요하므로 트랜잭션 롤백 방식이 아닌 TRUNCATE 방식을 씁니다.
 
