@@ -166,3 +166,10 @@
 - 결정: `juhyeon-0718/pos-app`을 public으로 전환하고, main에 Ruleset(`Restrict deletions`, `Block force pushes`, Bypass 없음)을 적용한다. PR 필수·`Restrict updates`는 켜지 않는다(정주현의 `ALLOW_MAIN_PUSH=1` main push 유지, D-27). 공개 저장소이므로 `.env`·비밀번호·토큰·실매장 데이터는 커밋하지 않는다.
 - 이유: 무료 플랜 private 저장소에는 Ruleset이 적용되지 않는다. 봇과 정주현이 같은 GitHub 계정을 쓰므로 GitHub 규칙은 되돌릴 수 없는 사고(force push, 삭제)만 막고, 일반 main push는 로컬 hook(D-27)과 SOUL 규칙이 막는다. `--no-verify`로 hook을 건너뛰어도 force push·삭제는 서버에서 거부된다.
 - 확인: 정주현 (2026-10-16). 공개 API로 rules/branches/main에 deletion·non_fast_forward 적용 확인, 전체 이력에 .env·토큰 없음 확인.
+
+## D-29 GitHub PR 리뷰 흐름과 봇 전용 계정
+- 날짜: 2026-10-16
+- 결정: 봇 작업은 machine account `myAgent-0718`(pos-app Collaborator, Write)로 기능 브랜치를 push하고 GitHub PR을 연다. 인증은 classic PAT(`repo`, `read:org`, 90일)를 정주현이 `gh auth login`으로 keyring에 등록한 것만 쓰며, 토큰은 채팅·파일에 남기지 않는다. 리뷰 순서는 동료 리뷰(백엔드 PR은 최유나, 프론트·QA PR은 이서연) → 김민준 최종 리뷰(D-25 경계, 테스트 재실행)이고, 리뷰는 PR 코멘트에 `[이름 리뷰]` 머리말로 남긴다. 정주현이 GitHub에서 Approve 후 Merge(merge commit)한다. main Ruleset에 `Require a pull request`(승인 1명)를 추가하고 bypass는 Repository admin만 둔다. 머지 후 김민준이 main 워크트리에서 `git pull --ff-only`로 로컬 main을 맞추고, 팀원은 자기 워크트리에서 `git merge main`을 한다.
+- 이유: 리뷰 이력을 GitHub에서 확인하기 위해서다. 같은 계정으로는 본인 PR을 Approve할 수 없어 봇 전용 계정을 둔다. fine-grained PAT는 개인 저장소 Collaborator를 지원하지 않아 classic PAT를 쓰며, 봇 계정이 접근하는 저장소는 pos-app 하나다. GitHub 약관상 machine account는 사람이 만들고 책임지는 무료 1개까지 허용된다.
+- 영향: 이 PC의 push는 봇 계정으로 나가므로 D-27의 `ALLOW_MAIN_PUSH=1` main 직접 push는 서버에서 거부되고, main 반영은 PR Merge로만 한다. pre-push hook(D-27)과 삭제·force push 금지(D-28)는 유지한다.
+- 확인: 정주현 (2026-10-16). `gh auth status`로 myAgent-0718 로그인·scope, API로 push 권한과 main pull_request 규칙(승인 1) 적용 확인.
