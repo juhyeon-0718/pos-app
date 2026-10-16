@@ -6,6 +6,13 @@ ENV는 dev/test/prod 중 하나. 인증 스텁(auth_stub)은 dev/test에서만 �
 다른 값이면 애플리케이션이 시작되지 않는다 (D-22).
 """
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# backend/.env를 로드한다. 이미 설정된 환경변수(예: CI, 쉘 export)가 있으면 덮어쓰지 않는다
+# (override=False가 기본값).
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 ENV = os.environ.get("ENV", "dev")
 
