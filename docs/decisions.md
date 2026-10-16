@@ -135,13 +135,15 @@
 - 이유: 팀원이 LLM 에이전트라 외부 텍스트로 지시가 들어오면 범위 밖 수정이나 유출로 이어진다. 앱에서는 Claude 응답이 화면과 업무 판단에 쓰이므로, 응답이 조작돼도 수치와 동작이 바뀌지 않아야 한다.
 - 확인: 정주현 (2026-10-16 지시)
 
-## D-25 모듈 경계와 결합도
+## D-25 모듈 응집도와 결합도
 - 날짜: 2026-10-16
 - 결정:
   - 프론트와 백엔드는 `docs/api/openapi.yaml`로만 연결한다. 계약 변경 PR을 구현 PR보다 먼저 머지한다.
   - 백엔드 도메인 모듈: `menu`, `orders`, `inventory`, `purchasing`(발주 추천), `analytics`, `auth`, `explain`(Claude 어댑터). 계층은 router → service → repository/model 단방향이다. 다른 모듈의 model·repository를 직접 import하지 않고 공개 service 함수로만 호출한다. 재고 변경은 `inventory` service로만 한다(D-05 원장).
   - `purchasing`은 `explain`의 인터페이스에만 의존하고, Claude 클라이언트는 `explain` 안에 격리한다. 키가 없거나 장애가 나도 추천은 동작한다(D-08).
   - 프론트는 `features/<customer|staff|kitchen|owner>` 단위로 나눈다. feature끼리 import하지 않고, 공용 코드는 `api/`, `components/`, `hooks/`에만 둔다. API 호출은 `api/` 클라이언트로만 한다.
+  - 응집도: 모듈은 한 가지 업무 책임만 가지며 자기 테이블과 업무 규칙을 소유한다. `menu`는 메뉴·레시피, `orders`는 주문·주문 항목·멱등 키와 상태 집계(D-16), `inventory`는 식재료·`stock_movements`, `purchasing`은 발주 추천·거래처를 소유한다. `analytics`는 조회 전용이며 다른 모듈의 공개 조회 함수만 사용한다. 같은 규칙을 두 모듈에 구현하지 않는다.
+  - 폴더는 계층이 아니라 기능 단위로 묶는다. 백엔드는 `app/<module>/`에 router·service·repository·schemas·tests를 함께 두고, 프론트는 `features/<x>/`에 화면·훅·Zustand 스토어를 함께 둔다. 범용 `utils`에 업무 로직을 넣지 않는다.
   - 순환 import를 금지한다. 리뷰에서 PR이 2개 이상 모듈을 수정하면 사유를 요구한다.
-- 이유: 담당자별로 병렬 작업하므로 모듈 경계가 곧 작업 경계다. 결합도가 높으면 충돌, 리뷰 범위, 회귀 테스트 비용이 같이 커진다.
+- 이유: 담당자별로 병렬 작업하므로 모듈 경계가 곧 작업 경계다. 결합도가 높거나 응집도가 낮으면 한 변경이 여러 담당자 코드로 번져 충돌, 리뷰 범위, 회귀 테스트 비용이 같이 커진다.
 - 확인: 정주현 (2026-10-16 지시)
