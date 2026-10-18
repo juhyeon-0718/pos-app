@@ -9,7 +9,7 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",
-    "gen:api": "npx -y openapi-typescript ../docs/api/openapi.yaml -o src/api/schema.ts",
+    "gen:api": "openapi-typescript ../docs/api/openapi.yaml -o src/api/schema.ts",
     "mock": "prism mock ../docs/api/openapi.yaml -p 4010 --cors -d"
   },
   "dependencies": {
@@ -30,6 +30,7 @@
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "jsdom": "^30.1.3",
+    "openapi-typescript": "^7.13.0",
     "oxlint": "^1.81.0",
     "typescript": "~5.9.3",
     "vite": "^8.3.0",
