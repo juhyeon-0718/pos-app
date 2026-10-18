@@ -14,45 +14,24 @@ export interface paths {
         get?: never;
         put?: never;
         /** 직원/주방/사장 로그인 */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        username: string;
-                        password: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description 로그인 성공 */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            access_token?: string;
-                            /** @example bearer */
-                            token_type?: string;
-                            role?: components["schemas"]["Role"];
-                        };
-                    };
-                };
-                /** @description 인증 실패 */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
+        post: operations["authLogin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/stream/token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
+        get?: never;
+        put?: never;
+        /** SSE 구독용 단기 토큰 발급 (직원/주방/사장). 로그인된 bearerAuth를 짧은 쿼리 토큰으로 교환한다. */
+        post: operations["issueStreamToken"];
         delete?: never;
         options?: never;
         head?: never;
@@ -69,46 +48,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** 테이블 QR 스캔 → 손님 세션 토큰 발급 */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    table_id: components["parameters"]["TableId"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /** @description QR에 인코딩된 현재 유효 토큰 값 */
-                        qr_token: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description 세션 토큰 발급 (만료 4시간, 재발급 시 구토큰 무효) */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            table_session_token?: string;
-                            /** Format: date-time */
-                            expires_at?: string;
-                        };
-                    };
-                };
-                /** @description QR 토큰 무효/만료 */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["createTableSession"];
         delete?: never;
         options?: never;
         head?: never;
@@ -123,28 +63,10 @@ export interface paths {
             cookie?: never;
         };
         /** 테이블 목록 조회 (사장) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description 테이블 목록 */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Table"][];
-                    };
-                };
-            };
-        };
+        get: operations["listTables"];
         put?: never;
-        post?: never;
+        /** 테이블 생성 (사장) */
+        post: operations["createTable"];
         delete?: never;
         options?: never;
         head?: never;
@@ -161,30 +83,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** 테이블 QR 재발급 (사장). 기존 세션 토큰은 즉시 무효화됨 */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    table_id: components["parameters"]["TableId"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description 재발급된 QR 토큰 */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            qr_token?: string;
-                        };
-                    };
-                };
-            };
-        };
+        post: operations["reissueTableQr"];
         delete?: never;
         options?: never;
         head?: never;
@@ -199,32 +98,32 @@ export interface paths {
             cookie?: never;
         };
         /** 메뉴 목록 조회 (손님/직원/주방/사장 공통) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description 메뉴 목록 */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Menu"][];
-                    };
-                };
-            };
-        };
+        get: operations["listMenus"];
         put?: never;
-        post?: never;
+        /** 메뉴 생성 (사장) */
+        post: operations["createMenu"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/menus/{menu_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 메뉴 삭제 (사장). 실제로는 is_active=false로 비활성화한다. */
+        delete: operations["deleteMenu"];
+        options?: never;
+        head?: never;
+        /** 메뉴 수정 (사장) */
+        patch: operations["updateMenu"];
         trace?: never;
     };
     "/menus/{menu_id}/recipe": {
@@ -235,60 +134,9 @@ export interface paths {
             cookie?: never;
         };
         /** 메뉴 레시피(식재료 BOM) 조회 */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    menu_id: components["parameters"]["MenuId"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description 레시피 목록 */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["RecipeItem"][];
-                    };
-                };
-            };
-        };
+        get: operations["getMenuRecipe"];
         /** 메뉴 레시피 등록/수정 (사장 전용) */
-        put: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    menu_id: components["parameters"]["MenuId"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["RecipeItem"][];
-                };
-            };
-            responses: {
-                /** @description 저장됨 */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description 사장 권한 아님 */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        put: operations["updateMenuRecipe"];
         post?: never;
         delete?: never;
         options?: never;
@@ -304,84 +152,10 @@ export interface paths {
             cookie?: never;
         };
         /** 전체 주문 목록 조회 (직원/주방/사장) */
-        get: {
-            parameters: {
-                query?: {
-                    status?: components["schemas"]["OrderStatus"];
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description 주문 목록 */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Order"][];
-                    };
-                };
-            };
-        };
+        get: operations["listOrders"];
         put?: never;
         /** 주문 생성 (손님 또는 직원 대리 입력) */
-        post: {
-            parameters: {
-                query?: never;
-                header: {
-                    /**
-                     * @description 클라이언트(QR 화면/직원 화면)가 생성한 UUID. 같은 키로 재요청하면 기존 주문을 그대로 반환한다(중복 생성 방지).
-                     *     같은 키에 본문이 다르면 422를 반환한다. 서버는 키를 24시간 보관한다.
-                     */
-                    "Idempotency-Key": string;
-                };
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        items: {
-                            menu_id: string;
-                            qty: number;
-                        }[];
-                    };
-                };
-            };
-            responses: {
-                /**
-                 * @description 주문 생성됨 (접수 상태로 시작, 레시피 기준 식재료 즉시 차감).
-                 *     식재료가 부족해도 주문 생성은 막지 않는다 — 부족한 식재료가 있으면 `stock_warnings[]`에 내려주고
-                 *     직원/사장에게 SSE `stock.warning` 이벤트를 보낸다.
-                 */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Order"];
-                    };
-                };
-                /** @description 같은 Idempotency-Key로 본문이 다른 요청이 재전송됨 */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        /**
-                         * @example {
-                         *       "code": "IDEMPOTENCY_KEY_MISMATCH",
-                         *       "detail": "같은 Idempotency-Key로 이전과 다른 요청 본문이 전송되었습니다."
-                         *     }
-                         */
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
+        post: operations["createOrder"];
         delete?: never;
         options?: never;
         head?: never;
@@ -396,26 +170,7 @@ export interface paths {
             cookie?: never;
         };
         /** 내 테이블 주문 상태 조회 (손님) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description 현재 테이블 세션의 주문 목록 */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Order"][];
-                    };
-                };
-            };
-        };
+        get: operations["listMyOrders"];
         put?: never;
         post?: never;
         delete?: never;
@@ -432,28 +187,7 @@ export interface paths {
             cookie?: never;
         };
         /** 주문 상세 조회 */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    order_id: components["parameters"]["OrderId"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description 주문 상세 */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Order"];
-                    };
-                };
-            };
-        };
+        get: operations["getOrder"];
         put?: never;
         post?: never;
         delete?: never;
@@ -483,48 +217,7 @@ export interface paths {
          *     - 조리 시작 후 취소: 사장 전용, `stock_movements`에 `cancel_restore`(+수량)와 `disposal`(-수량)을 한 쌍으로 같은 트랜잭션에 기록 (순 재고 변화 0, D-19)
          *     - 결제완료 처리: 직원/사장
          */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    order_id: components["parameters"]["OrderId"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        status: components["schemas"]["OrderStatus"];
-                    };
-                };
-            };
-            responses: {
-                /** @description 상태 변경됨 */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Order"];
-                    };
-                };
-                /** @description 역할상 불가함 (조리 후 취소는 사장 전용 등) */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description 허용되지 않는 상태 전이 */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        patch: operations["updateOrderStatus"];
         trace?: never;
     };
     "/kitchen/queue": {
@@ -535,26 +228,7 @@ export interface paths {
             cookie?: never;
         };
         /** 조리 대기/진행 목록 조회 (주방) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description 주문 항목 단위 큐 */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["OrderItem"][];
-                    };
-                };
-            };
-        };
+        get: operations["listKitchenQueue"];
         put?: never;
         post?: never;
         delete?: never;
@@ -577,33 +251,7 @@ export interface paths {
         options?: never;
         head?: never;
         /** 주문 항목 접수/완료 처리 (주방) */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    item_id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /** @enum {string} */
-                        status: "pending" | "cooking" | "done";
-                    };
-                };
-            };
-            responses: {
-                /** @description 변경됨 */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        patch: operations["updateKitchenItemStatus"];
         trace?: never;
     };
     "/ingredients": {
@@ -613,33 +261,33 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 식재료 재고 현황 조회 (직원/사장) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description 식재료 목록(현재재고 포함) */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Ingredient"][];
-                    };
-                };
-            };
-        };
+        /** 식재료 재고 현황 조회 (사장) */
+        get: operations["listIngredients"];
         put?: never;
-        post?: never;
+        /** 식재료 등록 (사장) */
+        post: operations["createIngredient"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/ingredients/{ingredient_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 식재료 비활성화 (사장). 재고 원장(D-05)과 과거 분석 데이터를 보존하기 위해 실제로 삭제하지 않고 is_active=false로 전환한다. */
+        delete: operations["deactivateIngredient"];
+        options?: never;
+        head?: never;
+        /** 식재료 정보 수정 (사장). 재고량 자체는 movements로만 바꾼다. */
+        patch: operations["updateIngredient"];
         trace?: never;
     };
     "/ingredients/{ingredient_id}/movements": {
@@ -650,30 +298,10 @@ export interface paths {
             cookie?: never;
         };
         /** 식재료 입출고 원장(stock_movements) 조회 (사장) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    ingredient_id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description 원장 목록 */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["StockMovement"][];
-                    };
-                };
-            };
-        };
+        get: operations["listIngredientMovements"];
         put?: never;
-        post?: never;
+        /** 식재료 입출고 수동 등록 (사장). 입고(restock), 조정(adjustment) 등에 사용. */
+        post: operations["createIngredientMovement"];
         delete?: never;
         options?: never;
         head?: never;
@@ -688,38 +316,24 @@ export interface paths {
             cookie?: never;
         };
         /** 매출 추이 집계 (사장, 대시보드 차트용 — 백엔드 집계 결과만 반환) */
-        get: {
-            parameters: {
-                query?: {
-                    period?: "day" | "week" | "month";
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /**
-                 * @description 집계 응답 예시:
-                 *     {"period":"day","points":[{"label":"2026-10-10","revenue":452000,"order_count":31}]}
-                 */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            period?: string;
-                            points?: {
-                                label?: string;
-                                revenue?: number;
-                                order_count?: number;
-                            }[];
-                        };
-                    };
-                };
-            };
+        get: operations["getSalesTrend"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/analytics/sales/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
+        /** 매출 요약 (사장, 기간 합계 — 대시보드 상단 카드용) */
+        get: operations["getSalesSummary"];
         put?: never;
         post?: never;
         delete?: never;
@@ -736,38 +350,7 @@ export interface paths {
             cookie?: never;
         };
         /** 식재료 사용량 추이 집계 (사장) */
-        get: {
-            parameters: {
-                query?: {
-                    period?: "day" | "week" | "month";
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description 식재료별 집계된 사용량 시계열 */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            period?: string;
-                            ingredients?: {
-                                ingredient_id?: string;
-                                name?: string;
-                                points?: {
-                                    label?: string;
-                                    used_qty?: number;
-                                }[];
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        get: operations["getIngredientUsageTrend"];
         put?: never;
         post?: never;
         delete?: never;
@@ -784,29 +367,26 @@ export interface paths {
             cookie?: never;
         };
         /** 발주 추천 목록 조회 (사장) */
-        get: {
-            parameters: {
-                query?: {
-                    status?: "제안" | "승인" | "반려";
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description 발주 추천 목록 */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["PurchaseRecommendation"][];
-                    };
-                };
-            };
-        };
+        get: operations["listPurchaseRecommendations"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/purchase-recommendations/cooldown-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 발주 추천 반려 쿨다운 설정 조회 (사장, 기본 24시간, D-09) */
+        get: operations["getPurchaseRecommendationCooldown"];
+        /** 발주 추천 반려 쿨다운 설정 변경 (사장) */
+        put: operations["updatePurchaseRecommendationCooldown"];
         post?: never;
         delete?: never;
         options?: never;
@@ -824,28 +404,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** 발주 추천 승인 (사장) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    rec_id: components["parameters"]["RecId"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description 승인됨 */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["PurchaseRecommendation"];
-                    };
-                };
-            };
-        };
+        post: operations["approvePurchaseRecommendation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -862,26 +421,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** 발주 추천 반려 (사장). 반려 시 해당 식재료는 쿨다운 시간(기본 24h, 설정 가능) 동안 재추천되지 않음 */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    rec_id: components["parameters"]["RecId"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description 반려됨 */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["rejectPurchaseRecommendation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -896,60 +436,31 @@ export interface paths {
             cookie?: never;
         };
         /** 직원/주방 계정 목록 조회 (사장) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description 사용자 목록 */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["User"][];
-                    };
-                };
-            };
-        };
+        get: operations["listUsers"];
         put?: never;
         /** 직원/주방 계정 생성 (사장) */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        username: string;
-                        password: string;
-                        role: components["schemas"]["Role"];
-                    };
-                };
-            };
-            responses: {
-                /** @description 생성됨 */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["User"];
-                    };
-                };
-            };
-        };
+        post: operations["createUser"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/users/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** 직원/주방 계정 수정 (사장). 비밀번호 재설정, 역할 변경, 비활성화에 사용. */
+        patch: operations["updateUser"];
         trace?: never;
     };
     "/health": {
@@ -960,24 +471,7 @@ export interface paths {
             cookie?: never;
         };
         /** 헬스체크 */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["healthCheck"];
         put?: never;
         post?: never;
         delete?: never;
@@ -995,6 +489,8 @@ export interface paths {
         };
         /**
          * SSE 구독 (직원/주방/사장). text/event-stream 응답.
+         *     EventSource는 커스텀 헤더를 보낼 수 없으므로 `POST /stream/token`으로 발급받은 단기 토큰을
+         *     `?token=`으로 전달한다(만료 5분, 1회성이 아니라 만료 전까지 재연결에 재사용 가능).
          *     이벤트 타입(event 필드): order.created, order.status_changed,
          *     order_item.status_changed, order.cancelled, purchase_recommendation.created,
          *     stock.warning (주문 생성 시 식재료 부족 발생).
@@ -1008,26 +504,7 @@ export interface paths {
          *
          *     클라이언트는 재연결 시 최신 상태를 REST로 다시 조회해 동기화한다(이벤트 유실 대비, at-least-once 미보장).
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description 이벤트 스트림 */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/event-stream": string;
-                    };
-                };
-            };
-        };
+        get: operations["streamOrders"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1051,12 +528,29 @@ export interface components {
             /** Format: date-time */
             qr_issued_at?: string;
         };
+        TableListResponse: {
+            items?: components["schemas"]["Table"][];
+            next_cursor?: string | null;
+            has_more?: boolean;
+        };
         Menu: {
             id?: string;
             name?: string;
             price?: number;
             category?: string;
             is_active?: boolean;
+        };
+        MenuWrite: {
+            name: string;
+            price: number;
+            category?: string;
+            /** @default true */
+            is_active: boolean;
+        };
+        MenuListResponse: {
+            items?: components["schemas"]["Menu"][];
+            next_cursor?: string | null;
+            has_more?: boolean;
         };
         RecipeItem: {
             ingredient_id?: string;
@@ -1072,6 +566,18 @@ export interface components {
             price_snapshot?: number;
             /** @enum {string} */
             item_status?: "pending" | "cooking" | "done";
+        };
+        OrderItemInput: {
+            menu_id: string;
+            qty: number;
+        };
+        CustomerOrderRequest: {
+            items: components["schemas"]["OrderItemInput"][];
+        };
+        StaffOrderRequest: {
+            /** @description 직원 대리 주문은 어느 테이블 주문인지 반드시 명시한다. */
+            table_id: string;
+            items: components["schemas"]["OrderItemInput"][];
         };
         Order: {
             id?: string;
@@ -1089,6 +595,11 @@ export interface components {
                 required?: number;
             }[];
         };
+        OrderListResponse: {
+            items?: components["schemas"]["Order"][];
+            next_cursor?: string | null;
+            has_more?: boolean;
+        };
         Ingredient: {
             id?: string;
             name?: string;
@@ -1096,6 +607,26 @@ export interface components {
             current_stock?: number;
             safety_stock?: number;
             lead_time_days?: number;
+            /** @description 발주 추천 estimated_cost 계산에 쓰는 단가 */
+            unit_price?: number;
+            /**
+             * @description false면 비활성화된 식재료(목록·발주 추천에서 제외)
+             * @default true
+             */
+            is_active: boolean;
+        };
+        IngredientWrite: {
+            name: string;
+            unit: string;
+            safety_stock?: number;
+            lead_time_days?: number;
+            unit_price?: number;
+            is_active?: boolean;
+        };
+        IngredientListResponse: {
+            items?: components["schemas"]["Ingredient"][];
+            next_cursor?: string | null;
+            has_more?: boolean;
         };
         StockMovement: {
             id?: string;
@@ -1107,41 +638,1234 @@ export interface components {
             /** Format: date-time */
             created_at?: string;
         };
+        StockMovementListResponse: {
+            items?: components["schemas"]["StockMovement"][];
+            next_cursor?: string | null;
+            has_more?: boolean;
+        };
+        /** @description 예측 근거(통계 계산값, purchasing 모듈이 산출). LLM이 생성하지 않는다(D-08). */
+        PurchaseRecommendationBasis: {
+            /** @description 예: moving_average, weekday_pattern */
+            method?: string;
+            window_days?: number;
+            avg_daily_usage?: number;
+            /** Format: date-time */
+            computed_at?: string;
+        };
         PurchaseRecommendation: {
             id?: string;
             ingredient_id?: string;
+            ingredient_name?: string;
+            unit?: string;
+            current_stock?: number;
+            safety_stock?: number;
+            /** @description 최근 기간 일평균 사용량 */
+            avg_usage?: number;
+            lead_time_days?: number;
             recommended_qty?: number;
-            /** @description 예측 근거(이동평균, 요일별 패턴 등 통계 값) */
-            basis?: Record<string, never>;
-            /** @description Claude API로 생성된 설명. API 키 미설정 시 null */
+            /** @description recommended_qty * Ingredient.unit_price */
+            estimated_cost?: number;
+            basis?: components["schemas"]["PurchaseRecommendationBasis"];
+            /** @description Claude API(explain 모듈)로 생성된 설명 문장. API 키 미설정/장애 시 null. 수량 계산에는 쓰이지 않는다(D-08). */
             llm_explanation?: string | null;
             /** @enum {string} */
-            status?: "제안" | "승인" | "반려";
+            status?: "proposed" | "approved" | "rejected";
+            /** @description 반려 시 사장이 입력한 반려 이유 */
+            reason?: string | null;
             /** Format: date-time */
             created_at?: string;
             approved_by?: string | null;
+        };
+        PurchaseRecommendationListResponse: {
+            items?: components["schemas"]["PurchaseRecommendation"][];
+            next_cursor?: string | null;
+            has_more?: boolean;
+        };
+        CooldownSettings: {
+            /**
+             * @description 반려 후 같은 식재료를 재추천하지 않는 시간(D-09)
+             * @default 24
+             */
+            cooldown_hours: number;
         };
         User: {
             id?: string;
             username?: string;
             role?: components["schemas"]["Role"];
+            is_active?: boolean;
         };
-        ErrorResponse: {
+        UserListResponse: {
+            items?: components["schemas"]["User"][];
+            next_cursor?: string | null;
+            has_more?: boolean;
+        };
+        Error: {
             /** @example IDEMPOTENCY_KEY_MISMATCH */
             code: string;
             detail: string;
         };
     };
-    responses: never;
+    responses: {
+        /** @description 인증 실패 또는 토큰 없음/만료 */
+        Unauthorized: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description 권한 없음 (역할상 접근 불가) */
+        Forbidden: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+    };
     parameters: {
         TableId: string;
         MenuId: string;
         OrderId: string;
         RecId: string;
+        /** @description 조회 시작 시각(포함, ISO 8601) */
+        FromDate: string;
+        /** @description 조회 종료 시각(미포함, ISO 8601) */
+        ToDate: string;
+        /** @description 페이지당 항목 수 */
+        Limit: number;
+        /** @description 이전 응답의 next_cursor 값. 첫 페이지는 생략한다. */
+        Cursor: string | null;
     };
     requestBodies: never;
     headers: never;
     pathItems: never;
 }
 export type $defs = Record<string, never>;
-export type operations = Record<string, never>;
+export interface operations {
+    authLogin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    username: string;
+                    password: string;
+                };
+            };
+        };
+        responses: {
+            /** @description 로그인 성공 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        access_token?: string;
+                        /** @example bearer */
+                        token_type?: string;
+                        role?: components["schemas"]["Role"];
+                    };
+                };
+            };
+            /** @description 인증 실패 (아이디/비밀번호 불일치) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    issueStreamToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 단기 토큰 발급 (만료 5분) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        token?: string;
+                        /** Format: date-time */
+                        expires_at?: string;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    createTableSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                table_id: components["parameters"]["TableId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description QR에 인코딩된 현재 유효 토큰 값 */
+                    qr_token: string;
+                };
+            };
+        };
+        responses: {
+            /** @description 세션 토큰 발급 (만료 4시간, 재발급 시 구토큰 무효) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        table_session_token?: string;
+                        /** Format: date-time */
+                        expires_at?: string;
+                    };
+                };
+            };
+            /** @description QR 토큰 무효/만료 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listTables: {
+        parameters: {
+            query?: {
+                /** @description 페이지당 항목 수 */
+                limit?: components["parameters"]["Limit"];
+                /** @description 이전 응답의 next_cursor 값. 첫 페이지는 생략한다. */
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 테이블 목록 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TableListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createTable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    table_no: number;
+                };
+            };
+        };
+        responses: {
+            /** @description 생성됨 (QR 토큰 자동 발급) */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Table"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    reissueTableQr: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                table_id: components["parameters"]["TableId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 재발급된 QR 토큰 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        qr_token?: string;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    listMenus: {
+        parameters: {
+            query?: {
+                /** @description 페이지당 항목 수 */
+                limit?: components["parameters"]["Limit"];
+                /** @description 이전 응답의 next_cursor 값. 첫 페이지는 생략한다. */
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 메뉴 목록 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MenuListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    createMenu: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MenuWrite"];
+            };
+        };
+        responses: {
+            /** @description 생성됨 */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Menu"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    deleteMenu: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                menu_id: components["parameters"]["MenuId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 비활성화됨 */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    updateMenu: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                menu_id: components["parameters"]["MenuId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MenuWrite"];
+            };
+        };
+        responses: {
+            /** @description 수정됨 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Menu"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getMenuRecipe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                menu_id: components["parameters"]["MenuId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 레시피 목록 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecipeItem"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    updateMenuRecipe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                menu_id: components["parameters"]["MenuId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecipeItem"][];
+            };
+        };
+        responses: {
+            /** @description 저장됨 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description 사장 권한 아님 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listOrders: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["OrderStatus"];
+                /** @description 조회 시작 시각(포함, ISO 8601) */
+                from?: components["parameters"]["FromDate"];
+                /** @description 조회 종료 시각(미포함, ISO 8601) */
+                to?: components["parameters"]["ToDate"];
+                /** @description 페이지당 항목 수 */
+                limit?: components["parameters"]["Limit"];
+                /** @description 이전 응답의 next_cursor 값. 첫 페이지는 생략한다. */
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 주문 목록 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    createOrder: {
+        parameters: {
+            query?: never;
+            header: {
+                /**
+                 * @description 클라이언트(QR 화면/직원 화면)가 생성한 UUID. 같은 키로 재요청하면 기존 주문을 그대로 반환한다(중복 생성 방지).
+                 *     같은 키에 본문이 다르면 422를 반환한다. 서버는 키를 24시간 보관한다.
+                 */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerOrderRequest"] | components["schemas"]["StaffOrderRequest"];
+            };
+        };
+        responses: {
+            /**
+             * @description 주문 생성됨 (접수 상태로 시작, 레시피 기준 식재료 즉시 차감).
+             *     식재료가 부족해도 주문 생성은 막지 않는다 — 부족한 식재료가 있으면 `stock_warnings[]`에 내려주고
+             *     직원/사장에게 SSE `stock.warning` 이벤트를 보낸다.
+             */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Order"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description 같은 Idempotency-Key로 본문이 다른 요청이 재전송됨, 또는 직원 대리 주문에 table_id가 없음 */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "IDEMPOTENCY_KEY_MISMATCH",
+                     *       "detail": "같은 Idempotency-Key로 이전과 다른 요청 본문이 전송되었습니다."
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listMyOrders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 현재 테이블 세션의 주문 목록 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Order"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    getOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 주문 상세 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Order"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    updateOrderStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: components["parameters"]["OrderId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    status: components["schemas"]["OrderStatus"];
+                };
+            };
+        };
+        responses: {
+            /** @description 상태 변경됨 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Order"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description 역할상 불가함 (조리 후 취소는 사장 전용 등) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description 허용되지 않는 상태 전이 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listKitchenQueue: {
+        parameters: {
+            query?: {
+                /** @description 페이지당 항목 수 */
+                limit?: components["parameters"]["Limit"];
+                /** @description 이전 응답의 next_cursor 값. 첫 페이지는 생략한다. */
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 주문 항목 단위 큐 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderItem"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    updateKitchenItemStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    status: "pending" | "cooking" | "done";
+                };
+            };
+        };
+        responses: {
+            /** @description 변경됨 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    listIngredients: {
+        parameters: {
+            query?: {
+                /** @description 페이지당 항목 수 */
+                limit?: components["parameters"]["Limit"];
+                /** @description 이전 응답의 next_cursor 값. 첫 페이지는 생략한다. */
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 식재료 목록(현재재고 포함) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IngredientListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createIngredient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IngredientWrite"];
+            };
+        };
+        responses: {
+            /** @description 생성됨 */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ingredient"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    deactivateIngredient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ingredient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 비활성화됨 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ingredient"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description 레시피에서 참조 중이라 비활성화 불가 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    updateIngredient: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ingredient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IngredientWrite"];
+            };
+        };
+        responses: {
+            /** @description 수정됨 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ingredient"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    listIngredientMovements: {
+        parameters: {
+            query?: {
+                /** @description 조회 시작 시각(포함, ISO 8601) */
+                from?: components["parameters"]["FromDate"];
+                /** @description 조회 종료 시각(미포함, ISO 8601) */
+                to?: components["parameters"]["ToDate"];
+                /** @description 페이지당 항목 수 */
+                limit?: components["parameters"]["Limit"];
+                /** @description 이전 응답의 next_cursor 값. 첫 페이지는 생략한다. */
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path: {
+                ingredient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 원장 목록 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockMovementListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createIngredientMovement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ingredient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    qty_delta: number;
+                    /** @enum {string} */
+                    type: "restock" | "adjustment" | "disposal" | "purchase_restock";
+                    ref_id?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description 등록됨 */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockMovement"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getSalesTrend: {
+        parameters: {
+            query?: {
+                period?: "day" | "week" | "month";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /**
+             * @description 집계 응답 예시:
+             *     {"period":"day","points":[{"label":"2026-10-10","revenue":452000,"order_count":31}]}
+             */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        period?: string;
+                        points?: {
+                            label?: string;
+                            revenue?: number;
+                            order_count?: number;
+                        }[];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getSalesSummary: {
+        parameters: {
+            query?: {
+                /** @description 조회 시작 시각(포함, ISO 8601) */
+                from?: components["parameters"]["FromDate"];
+                /** @description 조회 종료 시각(미포함, ISO 8601) */
+                to?: components["parameters"]["ToDate"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 기간 매출 요약 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: date-time */
+                        from?: string;
+                        /** Format: date-time */
+                        to?: string;
+                        revenue_total?: number;
+                        order_count?: number;
+                        avg_order_value?: number;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getIngredientUsageTrend: {
+        parameters: {
+            query?: {
+                period?: "day" | "week" | "month";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 식재료별 집계된 사용량 시계열 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        period?: string;
+                        ingredients?: {
+                            ingredient_id?: string;
+                            name?: string;
+                            points?: {
+                                label?: string;
+                                used_qty?: number;
+                            }[];
+                        }[];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    listPurchaseRecommendations: {
+        parameters: {
+            query?: {
+                status?: "proposed" | "approved" | "rejected";
+                /** @description 조회 시작 시각(포함, ISO 8601) */
+                from?: components["parameters"]["FromDate"];
+                /** @description 조회 종료 시각(미포함, ISO 8601) */
+                to?: components["parameters"]["ToDate"];
+                /** @description 페이지당 항목 수 */
+                limit?: components["parameters"]["Limit"];
+                /** @description 이전 응답의 next_cursor 값. 첫 페이지는 생략한다. */
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 발주 추천 목록 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRecommendationListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getPurchaseRecommendationCooldown: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 현재 쿨다운 설정 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CooldownSettings"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    updatePurchaseRecommendationCooldown: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CooldownSettings"];
+            };
+        };
+        responses: {
+            /** @description 변경됨 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CooldownSettings"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    approvePurchaseRecommendation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rec_id: components["parameters"]["RecId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 승인됨 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRecommendation"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    rejectPurchaseRecommendation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rec_id: components["parameters"]["RecId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description 반려 이유(자유 입력, 화면에 평문으로만 표시, D-24) */
+                    reason: string;
+                };
+            };
+        };
+        responses: {
+            /** @description 반려됨 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseRecommendation"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    listUsers: {
+        parameters: {
+            query?: {
+                /** @description 페이지당 항목 수 */
+                limit?: components["parameters"]["Limit"];
+                /** @description 이전 응답의 next_cursor 값. 첫 페이지는 생략한다. */
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 사용자 목록 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    username: string;
+                    password: string;
+                    role: components["schemas"]["Role"];
+                };
+            };
+        };
+        responses: {
+            /** @description 생성됨 */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    updateUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    password?: string;
+                    role?: components["schemas"]["Role"];
+                    is_active?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description 수정됨 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    healthCheck: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    streamOrders: {
+        parameters: {
+            query: {
+                /** @description POST /stream/token으로 발급받은 단기 토큰 */
+                token: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 이벤트 스트림 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+}

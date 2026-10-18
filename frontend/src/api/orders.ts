@@ -9,7 +9,8 @@
 import type { components } from "./schema";
 
 export type Order = components["schemas"]["Order"];
-export type ErrorResponse = components["schemas"]["ErrorResponse"];
+// B-03(D-30 계약 보강)부터 공통 에러 스키마 이름이 ErrorResponse -> Error로 바뀌었다.
+export type ErrorResponse = components["schemas"]["Error"];
 
 const BASE_URL = "/api/v1";
 const IDEMPOTENCY_KEY_STORAGE_PREFIX = "pos:idempotency-key:";
