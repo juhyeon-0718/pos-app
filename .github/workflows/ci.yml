@@ -39,8 +39,8 @@ jobs:
           cache-dependency-path: backend/requirements.txt
       - name: Install dependencies
         run: pip install -r requirements.txt
-      - name: Run pytest (contract tests)
-        run: python -m pytest tests/contract/ -v --tb=short
+      - name: Run pytest
+        run: python -m pytest tests/ -v --tb=short
 
   frontend:
     name: frontend (npm ci + test + build)

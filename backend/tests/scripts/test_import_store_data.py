@@ -11,7 +11,7 @@ import openpyxl
 import pytest
 
 # scripts 폴더를 import 경로에 추가
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts"))
 
 from import_store_data import (
     StoreDataImporter,
@@ -155,11 +155,19 @@ class TestStoreDataImporter:
         assert result["recipes"] == 1
 
     def test_idempotent_double_load(self, normal_xlsx: Path):
-        """같은 파일 두 번 올려도 예외 없음 (upsert)."""
+        """같은 파일 두 번 올려도 예외 없음, 카운트 동일 (upsert 멱등성)."""
         importer = StoreDataImporter()
         r1 = importer.load_file(normal_xlsx)
         r2 = importer.load_file(normal_xlsx)
-        assert r1 == r2, "두 번째 적재 결과가 다릅니다 (중복 생성 의심)"
+        assert r1["menus"] == r2["menus"], (
+            f"메뉴 카운트 불일치: 1차={r1['menus']}, 2차={r2['menus']} (중복 생성 의심)"
+        )
+        assert r1["ingredients"] == r2["ingredients"], (
+            f"식재료 카운트 불일치: 1차={r1['ingredients']}, 2차={r2['ingredients']}"
+        )
+        assert r1["recipes"] == r2["recipes"], (
+            f"레시피 카운트 불일치: 1차={r1['recipes']}, 2차={r2['recipes']}"
+        )
 
     def test_validation_error_raised_on_invalid_file(
         self, err_missing_required_xlsx: Path
