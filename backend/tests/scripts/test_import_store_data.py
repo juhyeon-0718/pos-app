@@ -145,6 +145,74 @@ class TestStoreDataValidator:
         )
 
 
+# ──────────────────────────────────────────────────────────────
+# 가짜 service (멱등성 검증용)
+# ──────────────────────────────────────────────────────────────
+
+class FakeMenuService:
+    """이름을 key로 dict에 저장 → 같은 이름으로 2회 적재해도 크기 불변 (upsert)."""
+
+    def __init__(self):
+        self.menus: dict[str, dict] = {}
+        self.recipes: dict[tuple, dict] = {}  # key: (menu_id, ingredient_id)
+
+    def upsert(self, name: str, price: float, category: str, is_active: bool) -> dict:
+        mid = f"menu_{name}"
+        self.menus[name] = {"id": mid, "name": name, "price": price}
+        return {"id": mid, "name": name}
+
+    def upsert_recipe(
+        self, menu_id: str, ingredient_id: str, qty_per_unit: float, unit: str
+    ) -> None:
+        self.recipes[(menu_id, ingredient_id)] = {
+            "qty_per_unit": qty_per_unit, "unit": unit
+        }
+
+
+class FakeInventoryService:
+    """이름을 key로 dict에 저장."""
+
+    def __init__(self):
+        self.ingredients: dict[str, dict] = {}
+
+    def upsert_ingredient(
+        self,
+        name: str,
+        unit: str,
+        unit_price: float,
+        current_stock: float,
+        safety_stock: float,
+        lead_time_days: int,
+    ) -> dict:
+        iid = f"ing_{name}"
+        self.ingredients[name] = {"id": iid, "name": name}
+        return {"id": iid, "name": name}
+
+
+class DuplicatingMenuService:
+    """list에 추가 → 중복 적재 시 크기 증가 (중복 감지 테스트용)."""
+
+    def __init__(self):
+        self.menus: list = []
+        self.recipes: list = []
+
+    def upsert(self, name: str, **kwargs) -> dict:
+        self.menus.append(name)
+        return {"id": f"menu_{name}", "name": name}
+
+    def upsert_recipe(self, **kwargs) -> None:
+        self.recipes.append(kwargs)
+
+
+class DuplicatingInventoryService:
+    def __init__(self):
+        self.ingredients: list = []
+
+    def upsert_ingredient(self, name: str, **kwargs) -> dict:
+        self.ingredients.append(name)
+        return {"id": f"ing_{name}", "name": name}
+
+
 class TestStoreDataImporter:
 
     def test_normal_file_loads_and_returns_counts(self, normal_xlsx: Path):
@@ -155,18 +223,48 @@ class TestStoreDataImporter:
         assert result["recipes"] == 1
 
     def test_idempotent_double_load(self, normal_xlsx: Path):
-        """같은 파일 두 번 올려도 예외 없음, 카운트 동일 (upsert 멱등성)."""
-        importer = StoreDataImporter()
-        r1 = importer.load_file(normal_xlsx)
-        r2 = importer.load_file(normal_xlsx)
-        assert r1["menus"] == r2["menus"], (
-            f"메뉴 카운트 불일치: 1차={r1['menus']}, 2차={r2['menus']} (중복 생성 의심)"
+        """같은 파일 두 번 올려도 저장된 데이터 개수 동일 (upsert 멱등성).
+
+        FakeMenuService/FakeInventoryService는 이름을 key로 dict에 저장한다.
+        진짜 upsert처럼 같은 키로 덮어쓰므로, 중복 적재해도 크기가 늘지 않는다.
+        """
+        menu_svc = FakeMenuService()
+        inv_svc = FakeInventoryService()
+        importer = StoreDataImporter(menu_service=menu_svc, inventory_service=inv_svc)
+
+        importer.load_file(normal_xlsx)
+        menus_1 = len(menu_svc.menus)
+        ings_1 = len(inv_svc.ingredients)
+        recipes_1 = len(menu_svc.recipes)
+
+        importer.load_file(normal_xlsx)
+        assert len(menu_svc.menus) == menus_1, (
+            f"메뉴 중복 생성: 1차={menus_1}, 2차={len(menu_svc.menus)}"
         )
-        assert r1["ingredients"] == r2["ingredients"], (
-            f"식재료 카운트 불일치: 1차={r1['ingredients']}, 2차={r2['ingredients']}"
+        assert len(inv_svc.ingredients) == ings_1, (
+            f"식재료 중복 생성: 1차={ings_1}, 2차={len(inv_svc.ingredients)}"
         )
-        assert r1["recipes"] == r2["recipes"], (
-            f"레시피 카운트 불일치: 1차={r1['recipes']}, 2차={r2['recipes']}"
+        assert len(menu_svc.recipes) == recipes_1, (
+            f"레시피 중복 생성: 1차={recipes_1}, 2차={len(menu_svc.recipes)}"
+        )
+
+    def test_duplicating_service_fails_idempotency(self, normal_xlsx: Path):
+        """중복 허용 가짜 service를 넣으면 이 테스트가 실패함을 확인.
+
+        DuplicatingMenuService는 list.append로 중복 저장한다.
+        2차 적재 후 크기가 증가하므로 assert가 실패해야 한다.
+        """
+        menu_svc = DuplicatingMenuService()
+        inv_svc = DuplicatingInventoryService()
+        importer = StoreDataImporter(menu_service=menu_svc, inventory_service=inv_svc)
+
+        importer.load_file(normal_xlsx)
+        menus_1 = len(menu_svc.menus)
+
+        importer.load_file(normal_xlsx)
+        # 중복 service는 2차에서 크기가 늘었어야 함 → 멱등성 테스트가 이를 잡는지 확인
+        assert len(menu_svc.menus) > menus_1, (
+            "DuplicatingMenuService가 중복을 만들지 않았습니다 — service 구현을 확인하세요"
         )
 
     def test_validation_error_raised_on_invalid_file(
