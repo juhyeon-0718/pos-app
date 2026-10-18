@@ -547,9 +547,9 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
     delete:
-      operationId: deleteIngredient
+      operationId: deactivateIngredient
       tags: [ingredients]
-      summary: 식재료 삭제 (사장). 레시피에서 참조 중이면 409.
+      summary: 식재료 비활성화 (사장). 재고 원장(D-05)과 과거 분석 데이터를 보존하기 위해 실제로 삭제하지 않고 is_active=false로 전환한다.
       security: [{ bearerAuth: [] }]
       parameters:
         - name: ingredient_id
@@ -557,12 +557,15 @@ paths:
           required: true
           schema: { type: string }
       responses:
-        '204':
-          description: 삭제됨
+        '200':
+          description: 비활성화됨
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ingredient' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '409':
-          description: 레시피에서 참조 중이라 삭제 불가
+          description: 레시피에서 참조 중이라 비활성화 불가
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
@@ -722,7 +725,7 @@ paths:
       parameters:
         - name: status
           in: query
-          schema: { type: string, enum: [제안, 승인, 반려] }
+          schema: { type: string, enum: [proposed, approved, rejected] }
         - $ref: '#/components/parameters/FromDate'
         - $ref: '#/components/parameters/ToDate'
         - $ref: '#/components/parameters/Limit'
@@ -802,7 +805,7 @@ paths:
               type: object
               required: [reason]
               properties:
-                reason: { type: string, description: "반려 이유(자유 입력, 화면에 평문으로만 표시, D-24)" }
+                reason: { type: string, maxLength: 200, description: "반려 이유(자유 입력, 화면에 평문으로만 표시, D-24)" }
       responses:
         '200':
           description: 반려됨
@@ -1138,6 +1141,7 @@ components:
         safety_stock: { type: number }
         lead_time_days: { type: integer }
         unit_price: { type: number, description: 발주 추천 estimated_cost 계산에 쓰는 단가 }
+        is_active: { type: boolean, default: true, description: false면 비활성화된 식재료(목록·발주 추천에서 제외)}
 
     IngredientWrite:
       type: object
@@ -1148,6 +1152,7 @@ components:
         safety_stock: { type: number }
         lead_time_days: { type: integer }
         unit_price: { type: number }
+        is_active: { type: boolean }
 
     IngredientListResponse:
       type: object
@@ -1204,7 +1209,7 @@ components:
           type: string
           nullable: true
           description: Claude API(explain 모듈)로 생성된 설명 문장. API 키 미설정/장애 시 null. 수량 계산에는 쓰이지 않는다(D-08).
-        status: { type: string, enum: [제안, 승인, 반려] }
+        status: { type: string, enum: [proposed, approved, rejected] }
         reason:
           type: string
           nullable: true
