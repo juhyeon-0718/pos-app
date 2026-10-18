@@ -1,8 +1,8 @@
 // D-17: 손님 화면은 GET /orders/mine을 10초 간격으로 폴링한다.
-// 손님용 SSE는 MVP 이후 검토 (D-17).
+// 손님용 SSE는 MVP 이후 검토 (D-17). customer feature 전용 훅이므로 이 폴더에 둔다.
 
 import { useQuery } from "@tanstack/react-query";
-import { fetchMyOrders, type Order } from "../api/orders";
+import { fetchMyOrders, type Order } from "../../../api/orders";
 
 const POLL_INTERVAL_MS = 10_000;
 
