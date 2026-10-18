@@ -1,0 +1,147 @@
+/* 손님 QR 주문 화면: 모바일 우선, 한손 조작, 터치 타겟 >= 44px */
+
+.customer-page {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px 16px 140px; /* 하단 CartBar 고정 공간 확보 */
+  font-size: 16px;
+}
+
+.session-loading,
+.session-error,
+.menu-error,
+.menu-empty,
+.orders-empty {
+  text-align: center;
+  padding: 24px 12px;
+}
+
+.order-status-section h2,
+.menu-section h2 {
+  font-size: 18px;
+  margin: 12px 0 8px;
+}
+
+.order-status-list,
+.order-items,
+.menu-list,
+.cart-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.order-status-row {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.order-status-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+}
+
+.order-status-badge {
+  background: #eef3ff;
+  color: #2355d6;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+}
+
+.menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 8px 4px;
+  border-bottom: 1px solid #eee;
+}
+
+.menu-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-name {
+  font-size: 16px;
+}
+
+.menu-price {
+  font-size: 14px;
+  color: #666;
+}
+
+.menu-add-btn,
+.order-submit-btn,
+.cart-item-qty button {
+  min-height: 44px;
+  min-width: 44px;
+  border-radius: 8px;
+  border: none;
+  background: #2355d6;
+  color: #fff;
+  font-size: 16px;
+}
+
+.cart-item-qty button {
+  background: #eef3ff;
+  color: #2355d6;
+  min-width: 36px;
+}
+
+.cart-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-width: 480px;
+  margin: 0 auto;
+  background: #fff;
+  border-top: 1px solid #ddd;
+  padding: 12px 16px;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.cart-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.cart-item-qty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cart-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.cart-total {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.order-submit-btn {
+  padding: 0 24px;
+  font-weight: 700;
+}
+
+.order-submit-btn:disabled {
+  background: #a9b8e0;
+}
+
+.cart-error {
+  color: #d33;
+  margin-top: 8px;
+  font-size: 14px;
+}
