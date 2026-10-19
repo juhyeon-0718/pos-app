@@ -1,0 +1,146 @@
+.staff-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.staff-new-order {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.staff-table-input {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.staff-table-input input {
+  min-height: 44px;
+  padding: 8px 12px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.staff-menu-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.staff-menu-row button {
+  min-height: 36px;
+  border-radius: 6px;
+  border: none;
+  background: #eef3ff;
+  color: #2355d6;
+}
+
+.staff-cart-items input {
+  width: 48px;
+  margin-left: 8px;
+}
+
+.staff-submit-btn {
+  min-height: 48px;
+  width: 100%;
+  margin-top: 8px;
+  border: none;
+  border-radius: 8px;
+  background: #2355d6;
+  color: #fff;
+  font-weight: 700;
+}
+
+.staff-submit-btn:disabled {
+  background: #a9b8e0;
+}
+
+.staff-order-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.staff-order-card {
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.staff-order-card--received {
+  border-color: #ffb020;
+}
+
+.staff-order-card--cooking {
+  border-color: #2b7fff;
+}
+
+.staff-order-card--served {
+  border-color: #2ecc71;
+}
+
+.staff-order-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+}
+
+.staff-order-items {
+  list-style: none;
+  padding: 0;
+  font-size: 14px;
+}
+
+.staff-order-item-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.staff-order-item-status {
+  color: #555;
+  font-size: 13px;
+}
+
+.stock-warning-list {
+  list-style: none;
+  padding: 8px;
+  background: #fff4e5;
+  border-radius: 6px;
+  color: #a86100;
+  font-size: 13px;
+}
+
+.staff-action-btn {
+  min-height: 44px;
+  border-radius: 8px;
+  border: none;
+  background: #2355d6;
+  color: #fff;
+  font-weight: 700;
+}
+
+.staff-action-btn:disabled {
+  background: #a9b8e0;
+}
+
+.staff-action-btn--danger {
+  background: #d33;
+}
+
+.staff-role-error,
+.staff-error {
+  color: #d33;
+}
