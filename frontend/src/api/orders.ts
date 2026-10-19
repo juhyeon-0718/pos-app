@@ -140,3 +140,40 @@ export async function createStaffOrder(
   clearIdempotencyKey(draftId);
   return res.json();
 }
+
+// 직원 화면(F-05): 전체 주문 목록 조회, 주문 상태 변경. bearerAuth라 authorizedFetch를 쓴다.
+export async function fetchAllOrders(
+  accessToken: string,
+  status?: components["schemas"]["OrderStatus"],
+  baseUrl = BASE_URL,
+): Promise<Order[]> {
+  const query = status ? `?status=${encodeURIComponent(status)}` : "";
+  const res = await authorizedFetch(`${baseUrl}/orders${query}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) {
+    throw new Error(`FETCH_ALL_ORDERS_FAILED: ${res.status}`);
+  }
+  const body: components["schemas"]["OrderListResponse"] = await res.json();
+  return body.items ?? [];
+}
+
+export async function updateOrderStatus(
+  accessToken: string,
+  orderId: string,
+  status: components["schemas"]["OrderStatus"],
+  baseUrl = BASE_URL,
+): Promise<Order> {
+  const res = await authorizedFetch(`${baseUrl}/orders/${orderId}/status`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) {
+    throw new Error(`UPDATE_ORDER_STATUS_FAILED: ${res.status}`);
+  }
+  return res.json();
+}
