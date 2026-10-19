@@ -1,9 +1,9 @@
-// 직원/주방/사장 공용 로그인 상태 (Zustand). features/ 간 직접 참조를 피하려고
-// features/ 밖 shared/에 둔다 — kitchen·staff·owner 화면이 각자 여기서 가져다 쓴다.
+// 직원/주방/사장 공용 로그인 상태 (Zustand). D-25: 공용 코드는 api/·components/·hooks/
+// 세 곳에만 둔다 — kitchen·staff·owner feature가 각자 여기서 가져다 쓴다.
 // 새로고침해도 로그인이 유지되도록 sessionStorage에 동기화한다(태블릿 재시작 전까지).
 
 import { create } from "zustand";
-import type { Role } from "../../api/auth";
+import type { Role } from "../api/auth";
 
 const STORAGE_KEY = "pos:auth";
 

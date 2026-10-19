@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useKitchenQueue } from "./useKitchenQueue";
-import { useAuthStore } from "../../../shared/auth/authStore";
+import { useAuthStore } from "../../../hooks/useAuthStore";
 
 function wrapper({ children }: { children: ReactNode }) {
   const queryClient = new QueryClient();

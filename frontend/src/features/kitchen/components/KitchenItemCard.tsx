@@ -3,7 +3,7 @@
 
 import type { OrderItem } from "../../../api/kitchen";
 import type { ItemStatus } from "../../../constants/status";
-import { itemStatusLabel } from "../../../constants/status";
+import { itemStatusLabel, itemActionLabel } from "../../../constants/status";
 import { useUpdateItemStatus } from "../hooks/useUpdateItemStatus";
 
 const NEXT_STATUS: Record<ItemStatus, ItemStatus | null> = {
@@ -33,7 +33,7 @@ export function KitchenItemCard({ item }: { item: OrderItem }) {
             item.id && updateStatus.mutate({ itemId: item.id, status: next })
           }
         >
-          {itemStatusLabel(next)}로 변경
+          {itemActionLabel(status)}
         </button>
       )}
     </li>

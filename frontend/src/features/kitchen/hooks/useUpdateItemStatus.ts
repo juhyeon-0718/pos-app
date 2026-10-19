@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateKitchenItemStatus, type ItemStatus } from "../../../api/kitchen";
-import { useAuthStore } from "../../../shared/auth/authStore";
+import { useAuthStore } from "../../../hooks/useAuthStore";
 
 export function useUpdateItemStatus() {
   const accessToken = useAuthStore((s) => s.accessToken);

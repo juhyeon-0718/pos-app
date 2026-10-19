@@ -1,7 +1,7 @@
 import { useKitchenQueue } from "./hooks/useKitchenQueue";
 import { KitchenItemCard } from "./components/KitchenItemCard";
-import { LoginPage } from "../../shared/auth/LoginPage";
-import { useAuthStore } from "../../shared/auth/authStore";
+import { LoginPage } from "../auth/LoginPage";
+import { useAuthStore } from "../../hooks/useAuthStore";
 import "./kitchen.css";
 
 export function KitchenPage() {

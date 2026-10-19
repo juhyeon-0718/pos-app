@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { KitchenItemCard } from "./KitchenItemCard";
-import { useAuthStore } from "../../../shared/auth/authStore";
+import { useAuthStore } from "../../../hooks/useAuthStore";
 import type { OrderItem } from "../../../api/kitchen";
 
 function renderWithQuery(ui: ReactNode) {
@@ -37,7 +37,7 @@ function baseItem(overrides: Partial<OrderItem> = {}): OrderItem {
 }
 
 describe("KitchenItemCard 상태 변경 버튼", () => {
-  it("pending 항목은 '조리중으로 변경' 버튼을 누르면 PATCH로 cooking을 보낸다", async () => {
+  it("pending 항목은 '조리 시작' 버튼을 누르면 PATCH로 cooking을 보낸다", async () => {
     let seenBody: unknown;
     vi.stubGlobal(
       "fetch",
@@ -49,7 +49,7 @@ describe("KitchenItemCard 상태 변경 버튼", () => {
 
     renderWithQuery(<KitchenItemCard item={baseItem()} />);
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "조리중으로 변경" }));
+    await user.click(screen.getByRole("button", { name: "조리 시작" }));
 
     expect(seenBody).toEqual({ status: "cooking" });
   });

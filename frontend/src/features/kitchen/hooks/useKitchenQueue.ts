@@ -3,7 +3,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { fetchKitchenQueue, type OrderItem } from "../../../api/kitchen";
-import { useAuthStore } from "../../../shared/auth/authStore";
+import { useAuthStore } from "../../../hooks/useAuthStore";
 
 const POLL_INTERVAL_MS = 5_000;
 
