@@ -7,6 +7,7 @@
 // `npm run gen:api`로 schema.ts를 재생성해서 타입 에러로 drift를 잡는다.
 
 import type { components } from "./schema";
+import { authorizedFetch } from "./httpClient";
 
 export type Order = components["schemas"]["Order"];
 // B-03(D-30 계약 보강)부터 공통 에러 스키마 이름이 ErrorResponse -> Error로 바뀌었다.
@@ -98,5 +99,44 @@ export async function fetchMyOrders(
   if (!res.ok) {
     throw new Error(`FETCH_MY_ORDERS_FAILED: ${res.status}`);
   }
+  return res.json();
+}
+
+// 직원 대리 주문(F-05): bearerAuth 인증이라 손님용과 분리한다.
+// 토큰이 만료되면 authorizedFetch가 로그아웃시켜 직원 화면이 멈추지 않게 한다.
+// 계약(StaffOrderRequest)이 table_id를 필수로 요구한다.
+export interface CreateStaffOrderRequest extends CreateOrderRequest {
+  table_id: string;
+}
+
+export async function createStaffOrder(
+  draftId: string,
+  accessToken: string,
+  payload: CreateStaffOrderRequest,
+  baseUrl = BASE_URL,
+): Promise<Order> {
+  const idempotencyKey = getOrCreateIdempotencyKey(draftId);
+
+  const res = await authorizedFetch(`${baseUrl}/orders`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Idempotency-Key": idempotencyKey,
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    if (res.status === 422) {
+      const body = await parseErrorBody(res);
+      if (body?.code === IDEMPOTENCY_KEY_MISMATCH) {
+        clearIdempotencyKey(draftId);
+      }
+    }
+    throw new Error(`CREATE_STAFF_ORDER_FAILED: ${res.status}`);
+  }
+
+  clearIdempotencyKey(draftId);
   return res.json();
 }

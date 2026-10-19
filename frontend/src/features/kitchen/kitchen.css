@@ -1,0 +1,77 @@
+/* 주방 원거리 가독성: 큰 글씨, 고대비 */
+
+.kitchen-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px;
+  background: #111;
+  color: #fff;
+  min-height: 100vh;
+}
+
+.kitchen-page h1 {
+  font-size: 28px;
+}
+
+.kitchen-queue {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.kitchen-item {
+  border: 3px solid #555;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #222;
+}
+
+.kitchen-item--pending {
+  border-color: #ffb020;
+}
+
+.kitchen-item--cooking {
+  border-color: #2b7fff;
+}
+
+.kitchen-item--done {
+  border-color: #2ecc71;
+  opacity: 0.6;
+}
+
+.kitchen-item-main {
+  display: flex;
+  justify-content: space-between;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.kitchen-item-status {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.kitchen-item-btn {
+  min-height: 56px;
+  font-size: 20px;
+  font-weight: 700;
+  border: none;
+  border-radius: 10px;
+  background: #ffb020;
+  color: #111;
+}
+
+.kitchen-item-btn:disabled {
+  opacity: 0.5;
+}
+
+.kitchen-error,
+.kitchen-role-error {
+  font-size: 20px;
+  color: #ff6b6b;
+}
