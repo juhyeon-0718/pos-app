@@ -13,6 +13,7 @@ from sqlalchemy import func, select
 from app.models.enums import StockMovementReason
 from app.models.order import Order
 from app.models.stock_movement import StockMovement
+from tests.conftest import auth_header, table_session_header
 from tests.seed import (
     INGREDIENT_X_ID,
     INGREDIENT_X_INITIAL_STOCK,
@@ -30,7 +31,7 @@ def _create_order(client, ikey: str) -> tuple[str, str]:
     """주문 생성 후 (order_id, first_item_id) 반환."""
     r = client.post(
         "/api/v1/orders",
-        headers={"Idempotency-Key": ikey, "X-Table-Session-Token": "t_test"},
+        headers={"Idempotency-Key": ikey, **table_session_header()},
         json={"items": [{"menu_id": MENU_A_ID, "qty": 1}]},
     )
     assert r.status_code == 201, f"주문 생성 실패: {r.text}"
@@ -68,7 +69,7 @@ def test_tc03_cancel_before_cooking_restores_stock(client, db):
 
     r_cancel = client.patch(
         f"/api/v1/orders/{order_id}/status",
-        headers={"Authorization": "Bearer staff:u_1"},
+        headers=auth_header("staff"),
         json={"status": "cancelled"},
     )
     assert r_cancel.status_code == 200, f"취소 실패: {r_cancel.text}"
@@ -110,7 +111,7 @@ def test_tc04_cancel_after_cooking_records_disposal(client, db):
 
     r_cancel = client.patch(
         f"/api/v1/orders/{order_id}/status",
-        headers={"Authorization": "Bearer owner:u_1"},
+        headers=auth_header("owner"),
         json={"status": "cancelled"},
     )
     assert r_cancel.status_code == 200, f"취소 실패: {r_cancel.text}"
@@ -153,7 +154,7 @@ def test_tc05_staff_cannot_cancel_after_cooking(client, db):
 
     r_cancel = client.patch(
         f"/api/v1/orders/{order_id}/status",
-        headers={"Authorization": "Bearer staff:u_1"},
+        headers=auth_header("staff"),
         json={"status": "cancelled"},
     )
     assert r_cancel.status_code == 403, (

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth_stub import get_current_role, get_table_id
+from app.auth.dependencies import get_current_role, get_table_id
 from app.db import get_db
 from app.models.order import Order
 from app.schemas.order import OrderCreateIn, OrderOut, OrderStatusIn

@@ -18,6 +18,7 @@ from app.models.ingredient import Ingredient
 from app.models.menu import Menu
 from app.models.order import Order, OrderItem
 from app.models.recipe import RecipeItem
+from tests.conftest import table_session_header
 from tests.seed import INGREDIENT_X_ID, MENU_A_ID, seed
 
 IKEY_06A = "550e8400-e29b-41d4-a716-446655440006"
@@ -41,7 +42,7 @@ def _create_two_item_order(client, ikey: str) -> tuple[str, list[dict]]:
     """메뉴A + 메뉴B 아이템 2개짜리 주문 생성. (order_id, items) 반환."""
     r = client.post(
         "/api/v1/orders",
-        headers={"Idempotency-Key": ikey, "X-Table-Session-Token": "t_test"},
+        headers={"Idempotency-Key": ikey, **table_session_header()},
         json={
             "items": [
                 {"menu_id": MENU_A_ID, "qty": 1},
