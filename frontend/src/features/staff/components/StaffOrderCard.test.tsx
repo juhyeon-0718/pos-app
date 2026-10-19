@@ -82,4 +82,65 @@ describe("StaffOrderCard 상태별 동작 버튼", () => {
     );
     expect(screen.getByText(/재고 부족: 돼지고기/)).toBeTruthy();
   });
+
+  it("항목별 조리 상태(대기/조리중/완료)가 라벨로 보인다", () => {
+    renderWithQuery(
+      <StaffOrderCard
+        order={baseOrder({
+          status: "received",
+          items: [
+            { id: "item_1", menu_name: "불고기", qty: 1, item_status: "pending" },
+            { id: "item_2", menu_name: "비빔밥", qty: 1, item_status: "done" },
+          ],
+        })}
+      />,
+    );
+    expect(screen.getByText("대기")).toBeTruthy();
+    expect(screen.getByText("완료")).toBeTruthy();
+  });
+
+  it("D-32: 항목이 전부 done이 아니면 '서빙완료로 변경' 버튼이 비활성이다", () => {
+    renderWithQuery(
+      <StaffOrderCard
+        order={baseOrder({
+          status: "cooking",
+          items: [
+            { id: "item_1", menu_name: "불고기", qty: 1, item_status: "done" },
+            { id: "item_2", menu_name: "비빔밥", qty: 1, item_status: "cooking" },
+          ],
+        })}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "서빙완료로 변경" })).toBeDisabled();
+  });
+
+  it("D-32: 항목이 전부 done이면 '서빙완료로 변경' 버튼이 활성화되고 클릭하면 status=served를 보낸다", async () => {
+    let seenBody: unknown;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init?: RequestInit) => {
+        seenBody = init?.body ? JSON.parse(init.body as string) : undefined;
+        return new Response(JSON.stringify({}), { status: 200 });
+      }),
+    );
+
+    renderWithQuery(
+      <StaffOrderCard
+        order={baseOrder({
+          status: "cooking",
+          items: [
+            { id: "item_1", menu_name: "불고기", qty: 1, item_status: "done" },
+            { id: "item_2", menu_name: "비빔밥", qty: 1, item_status: "done" },
+          ],
+        })}
+      />,
+    );
+
+    const button = screen.getByRole("button", { name: "서빙완료로 변경" });
+    expect(button).not.toBeDisabled();
+
+    const user = userEvent.setup();
+    await user.click(button);
+    expect(seenBody).toEqual({ status: "served" });
+  });
 });

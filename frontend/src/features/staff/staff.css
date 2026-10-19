@@ -103,6 +103,17 @@
   font-size: 14px;
 }
 
+.staff-order-item-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.staff-order-item-status {
+  color: #555;
+  font-size: 13px;
+}
+
 .stock-warning-list {
   list-style: none;
   padding: 8px;
@@ -119,6 +130,10 @@
   background: #2355d6;
   color: #fff;
   font-weight: 700;
+}
+
+.staff-action-btn:disabled {
+  background: #a9b8e0;
 }
 
 .staff-action-btn--danger {
