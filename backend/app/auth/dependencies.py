@@ -84,3 +84,21 @@ def get_stream_role(token: str) -> Role:
         return Role(payload["role"])
     except ValueError:
         raise HTTPException(status_code=401, detail="알 수 없는 role입니다") from None
+
+
+def require_any_auth(
+    authorization: str | None = Header(default=None),
+    x_table_session_token: str | None = Header(default=None, alias="X-Table-Session-Token"),
+    db: Session = Depends(get_db),
+) -> None:
+    """메뉴 조회처럼 tableToken·bearerAuth 둘 다 허용하는 엔드포인트용 (B-03 계약).
+
+    둘 중 하나라도 유효하면 통과. 둘 다 없거나 둘 다 무효면 401.
+    """
+    if x_table_session_token:
+        get_table_id(x_table_session_token, db)
+        return
+    if authorization:
+        get_current_role(authorization)
+        return
+    raise HTTPException(status_code=401, detail="인증이 필요합니다")
