@@ -213,6 +213,34 @@ class DuplicatingInventoryService:
         return {"id": f"ing_{name}", "name": name}
 
 
+def _assert_idempotent(
+    importer: StoreDataImporter,
+    menu_svc,
+    inv_svc,
+    path: Path,
+) -> None:
+    """같은 파일을 두 번 적재한 뒤 저장된 개수가 동일한지 검사.
+
+    upsert가 올바르면 2차 적재 후에도 메뉴·식재료·레시피 개수가 변하지 않는다.
+    중복 허용 service를 넣으면 AssertionError가 발생한다.
+    """
+    importer.load_file(path)
+    menus_1 = len(menu_svc.menus)
+    ings_1 = len(inv_svc.ingredients)
+    recipes_1 = len(menu_svc.recipes)
+
+    importer.load_file(path)
+    assert len(menu_svc.menus) == menus_1, (
+        f"메뉴 중복 생성: 1차={menus_1}, 2차={len(menu_svc.menus)}"
+    )
+    assert len(inv_svc.ingredients) == ings_1, (
+        f"식재료 중복 생성: 1차={ings_1}, 2차={len(inv_svc.ingredients)}"
+    )
+    assert len(menu_svc.recipes) == recipes_1, (
+        f"레시피 중복 생성: 1차={recipes_1}, 2차={len(menu_svc.recipes)}"
+    )
+
+
 class TestStoreDataImporter:
 
     def test_normal_file_loads_and_returns_counts(self, normal_xlsx: Path):
@@ -223,49 +251,23 @@ class TestStoreDataImporter:
         assert result["recipes"] == 1
 
     def test_idempotent_double_load(self, normal_xlsx: Path):
-        """같은 파일 두 번 올려도 저장된 데이터 개수 동일 (upsert 멱등성).
-
-        FakeMenuService/FakeInventoryService는 이름을 key로 dict에 저장한다.
-        진짜 upsert처럼 같은 키로 덮어쓰므로, 중복 적재해도 크기가 늘지 않는다.
-        """
+        """같은 파일 두 번 올려도 저장된 데이터 개수 동일 (upsert 멱등성)."""
         menu_svc = FakeMenuService()
         inv_svc = FakeInventoryService()
         importer = StoreDataImporter(menu_service=menu_svc, inventory_service=inv_svc)
-
-        importer.load_file(normal_xlsx)
-        menus_1 = len(menu_svc.menus)
-        ings_1 = len(inv_svc.ingredients)
-        recipes_1 = len(menu_svc.recipes)
-
-        importer.load_file(normal_xlsx)
-        assert len(menu_svc.menus) == menus_1, (
-            f"메뉴 중복 생성: 1차={menus_1}, 2차={len(menu_svc.menus)}"
-        )
-        assert len(inv_svc.ingredients) == ings_1, (
-            f"식재료 중복 생성: 1차={ings_1}, 2차={len(inv_svc.ingredients)}"
-        )
-        assert len(menu_svc.recipes) == recipes_1, (
-            f"레시피 중복 생성: 1차={recipes_1}, 2차={len(menu_svc.recipes)}"
-        )
+        _assert_idempotent(importer, menu_svc, inv_svc, normal_xlsx)
 
     def test_duplicating_service_fails_idempotency(self, normal_xlsx: Path):
-        """중복 허용 가짜 service를 넣으면 이 테스트가 실패함을 확인.
+        """중복 허용 service를 넣으면 멱등성 검사가 실패해야 함.
 
         DuplicatingMenuService는 list.append로 중복 저장한다.
-        2차 적재 후 크기가 증가하므로 assert가 실패해야 한다.
+        _assert_idempotent가 이를 AssertionError로 잡는지 확인한다.
         """
         menu_svc = DuplicatingMenuService()
         inv_svc = DuplicatingInventoryService()
         importer = StoreDataImporter(menu_service=menu_svc, inventory_service=inv_svc)
-
-        importer.load_file(normal_xlsx)
-        menus_1 = len(menu_svc.menus)
-
-        importer.load_file(normal_xlsx)
-        # 중복 service는 2차에서 크기가 늘었어야 함 → 멱등성 테스트가 이를 잡는지 확인
-        assert len(menu_svc.menus) > menus_1, (
-            "DuplicatingMenuService가 중복을 만들지 않았습니다 — service 구현을 확인하세요"
-        )
+        with pytest.raises(AssertionError):
+            _assert_idempotent(importer, menu_svc, inv_svc, normal_xlsx)
 
     def test_validation_error_raised_on_invalid_file(
         self, err_missing_required_xlsx: Path
