@@ -2,8 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clearIdempotencyKey,
   createOrder,
+  createStaffOrder,
   getOrCreateIdempotencyKey,
   type CreateOrderRequest,
+  type CreateStaffOrderRequest,
 } from "./orders";
 
 const payload: CreateOrderRequest = {
@@ -109,5 +111,20 @@ describe("createOrder - Idempotency-Key 생명주기", () => {
     expect(keyAfter).not.toBe(keyBefore);
 
     clearIdempotencyKey("draft-success");
+  });
+});
+
+describe("createStaffOrder - table_id 타입 강제", () => {
+  it("table_id 없이 호출하면 타입 오류가 난다(계약: StaffOrderRequest.table_id 필수)", () => {
+    // 런타임 어서션이 아니라 컴파일 타임 체크다. table_id를 빼면 타입 에러가 나야
+    // 하므로 @ts-expect-error를 붙인다 — 에러가 실제로 안 나면(즉 실수로 optional이
+    // 되면) tsc가 "Unused '@ts-expect-error' directive"로 빌드를 깨 잡아낸다.
+    const payloadMissingTableId = {
+      items: [{ menu_id: "m_1", qty: 1 }],
+    };
+    // @ts-expect-error - table_id가 없어 CreateStaffOrderRequest에 맞지 않는다
+    const _typeCheckOnly: CreateStaffOrderRequest = payloadMissingTableId;
+    void _typeCheckOnly;
+    void createStaffOrder;
   });
 });
