@@ -15,6 +15,7 @@ from sqlalchemy import func, select
 from app.models.order import Order
 from app.models.stock_movement import StockMovement
 from app.models.enums import StockMovementReason
+from tests.conftest import table_session_header
 from tests.seed import INGREDIENT_X_ID, MENU_A_ID, seed
 
 IKEY = "550e8400-e29b-41d4-a716-446655440001"
@@ -29,7 +30,7 @@ def test_tc02_different_body_same_key_returns_422(client, db):
         "/api/v1/orders",
         headers={
             "Idempotency-Key": IKEY,
-            "X-Table-Session-Token": "t_test",
+            **table_session_header(),
         },
         json={"items": [{"menu_id": MENU_A_ID, "qty": 1}]},
     )
@@ -47,7 +48,7 @@ def test_tc02_different_body_same_key_returns_422(client, db):
         "/api/v1/orders",
         headers={
             "Idempotency-Key": IKEY,
-            "X-Table-Session-Token": "t_test",
+            **table_session_header(),
         },
         json={"items": [{"menu_id": MENU_A_ID, "qty": 99}]},
     )

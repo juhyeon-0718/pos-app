@@ -17,6 +17,7 @@ import threading
 import pytest
 from sqlalchemy import func, select
 
+from tests.conftest import table_session_header
 from tests.seed import (
     INGREDIENT_X_ID,
     INGREDIENT_X_INITIAL_STOCK,
@@ -43,7 +44,7 @@ def test_tc01_concurrent_same_key_creates_one_order(client, db):
                 "/api/v1/orders",
                 headers={
                     "Idempotency-Key": IKEY,
-                    "X-Table-Session-Token": "t_test",
+                    **table_session_header(),
                 },
                 json={"items": [{"menu_id": MENU_A_ID, "qty": 1}]},
             )

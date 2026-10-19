@@ -74,6 +74,14 @@ _TRUNCATE_SEED = text("""
     RESTART IDENTITY CASCADE
 """)
 
+# auth 모듈(users/tables)도 각 테스트 전후 비운다 (B-05)
+_TRUNCATE_AUTH = text("""
+    TRUNCATE TABLE
+        users,
+        tables
+    RESTART IDENTITY CASCADE
+""")
+
 
 @pytest.fixture(autouse=True)
 def clean_tables():
@@ -81,10 +89,12 @@ def clean_tables():
     with _engine.begin() as conn:
         conn.execute(_TRUNCATE)
         conn.execute(_TRUNCATE_SEED)
+        conn.execute(_TRUNCATE_AUTH)
     yield
     with _engine.begin() as conn:
         conn.execute(_TRUNCATE)
         conn.execute(_TRUNCATE_SEED)
+        conn.execute(_TRUNCATE_AUTH)
 
 
 @pytest.fixture
@@ -102,3 +112,19 @@ def client():
     """FastAPI TestClient (동기). threading.Thread에서 공유 가능."""
     with TestClient(fastapi_app, raise_server_exceptions=False) as c:
         yield c
+
+
+def auth_header(role: str, user_id: str = "u_1") -> dict[str, str]:
+    """테스트용 bearerAuth 헤더. B-05부터 실제 JWT를 발급해 stub 포맷을 대체한다."""
+    from app.auth.security import create_access_token
+
+    token = create_access_token(user_id=user_id, role=role)
+    return {"Authorization": f"Bearer {token}"}
+
+
+def table_session_header(table_id: str = "t_test", qr_token: str = "qr_seed42_test") -> dict[str, str]:
+    """테스트용 tableToken 헤더. seed()가 만든 테이블의 qr_token과 일치해야 한다 (B-05)."""
+    from app.auth.security import create_table_session_token
+
+    token = create_table_session_token(table_id=table_id, qr_token=qr_token)
+    return {"X-Table-Session-Token": token}
