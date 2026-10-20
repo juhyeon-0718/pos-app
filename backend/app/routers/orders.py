@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -79,6 +80,9 @@ def patch_order_status(
         raise HTTPException(status_code=404, detail="주문을 찾을 수 없습니다") from None
     except order_service.Forbidden as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from None
+    except order_service.ServeConditionNotMet as exc:
+        # 계약 Error 스키마({code, detail})를 응답 최상위에 둔다.
+        return JSONResponse(status_code=409, content={"code": "ORDER_ITEMS_NOT_DONE", "detail": str(exc)})
     except order_service.InvalidTransition:
         raise HTTPException(status_code=409, detail="허용되지 않는 상태 전이") from None
     return _serialize(order)

@@ -33,7 +33,11 @@ class Forbidden(Exception):
 
 
 class InvalidTransition(Exception):
-    pass
+    """허용되지 않는 상태 전이 (409). 메시지가 있으면 응답 detail로 쓴다."""
+
+
+class ServeConditionNotMet(InvalidTransition):
+    """served 전이 조건(모든 항목 done, D-32) 불충족 (409)."""
 
 
 @dataclass
@@ -154,6 +158,11 @@ def _order_reached_cooking_stage(order: Order) -> bool:
     return any(ItemStatus(item.item_status) in COOKING_STAGE_ITEM_STATUSES for item in order.items)
 
 
+def _all_items_done(order: Order) -> bool:
+    """D-32: 모든 항목이 done이어야 한다. 항목이 없으면 False. (항목 단위 취소는 2차, D-35)"""
+    return bool(order.items) and all(i.item_status == ItemStatus.done.value for i in order.items)
+
+
 def change_order_status(db: Session, order_id: str, new_status: str, role: Role) -> Order:
     order = db.get(Order, order_id)
     if order is None:
@@ -163,6 +172,9 @@ def change_order_status(db: Session, order_id: str, new_status: str, role: Role)
         target = OrderStatus(new_status)
     except ValueError:
         raise InvalidTransition() from None
+
+    if target == OrderStatus.served and not _all_items_done(order):
+        raise ServeConditionNotMet("모든 항목이 완료(done)되어야 서빙완료할 수 있습니다")
 
     if target == OrderStatus.cancelled:
         if _order_reached_cooking_stage(order):
