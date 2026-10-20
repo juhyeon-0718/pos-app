@@ -33,7 +33,7 @@ class Forbidden(Exception):
 
 
 class InvalidTransition(Exception):
-    pass
+    """허용되지 않는 상태 전이 (409). 메시지가 있으면 응답 detail로 쓴다."""
 
 
 @dataclass
@@ -154,6 +154,16 @@ def _order_reached_cooking_stage(order: Order) -> bool:
     return any(ItemStatus(item.item_status) in COOKING_STAGE_ITEM_STATUSES for item in order.items)
 
 
+# D-32: 항목 단위 취소 상태. ItemStatus enum에는 없지만 item_status 컬럼은 문자열이라 값이 올 수 있다.
+_CANCELLED_ITEM_STATUS = "cancelled"
+
+
+def _all_items_done(order: Order) -> bool:
+    """D-32: 취소 항목을 뺀 모든 항목이 done이어야 한다. 활성 항목이 하나도 없으면 False."""
+    active = [i for i in order.items if i.item_status != _CANCELLED_ITEM_STATUS]
+    return bool(active) and all(i.item_status == ItemStatus.done.value for i in active)
+
+
 def change_order_status(db: Session, order_id: str, new_status: str, role: Role) -> Order:
     order = db.get(Order, order_id)
     if order is None:
@@ -163,6 +173,9 @@ def change_order_status(db: Session, order_id: str, new_status: str, role: Role)
         target = OrderStatus(new_status)
     except ValueError:
         raise InvalidTransition() from None
+
+    if target == OrderStatus.served and not _all_items_done(order):
+        raise InvalidTransition("모든 항목이 완료(done)되어야 서빙완료할 수 있습니다")
 
     if target == OrderStatus.cancelled:
         if _order_reached_cooking_stage(order):
