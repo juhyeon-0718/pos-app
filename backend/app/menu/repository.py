@@ -5,16 +5,21 @@
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
+from app.models.base import utcnow
+
 from app.models.menu import Menu
 from app.models.recipe import RecipeItem
 
 
 def list_menus(db: Session) -> list[Menu]:
-    return list(db.execute(select(Menu).order_by(Menu.id)).scalars().all())
+    return list(db.execute(select(Menu).where(Menu.deleted_at.is_(None)).order_by(Menu.id)).scalars().all())
 
 
-def get_menu(db: Session, menu_id: str) -> Menu | None:
-    return db.get(Menu, menu_id)
+def get_menu(db: Session, menu_id: str, *, include_deleted: bool = False) -> Menu | None:
+    menu = db.get(Menu, menu_id)
+    if menu is not None and menu.deleted_at is not None and not include_deleted:
+        return None
+    return menu
 
 
 def create_menu(db: Session, *, name: str, price: float, category: str | None, is_active: bool) -> Menu:
@@ -35,8 +40,9 @@ def update_menu(db: Session, menu: Menu, *, name: str, price: float, category: s
     return menu
 
 
-def deactivate_menu(db: Session, menu: Menu) -> Menu:
-    menu.is_active = False
+def soft_delete_menu(db: Session, menu: Menu) -> Menu:
+    """deleted_at만 기록한다. is_active와 레시피, 과거 주문 참조는 건드리지 않는다."""
+    menu.deleted_at = utcnow()
     db.commit()
     db.refresh(menu)
     return menu

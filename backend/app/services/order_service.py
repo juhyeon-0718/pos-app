@@ -14,8 +14,8 @@ from app.models.base import gen_id
 from app.models.enums import COOKING_STAGE_ITEM_STATUSES, ItemStatus, OrderStatus, Role, StockMovementReason
 from app.models.idempotency_key import IdempotencyKey
 from app.models.ingredient import Ingredient
-from app.models.menu import Menu
 from app.models.order import Order, OrderItem
+from app.menu import service as menu_service
 from app.models.recipe import RecipeItem
 from app.services import stock_service
 
@@ -30,6 +30,10 @@ class NotFound(Exception):
 
 class Forbidden(Exception):
     pass
+
+
+class MenuUnavailable(Exception):
+    """일시품절이거나 삭제된 메뉴가 주문에 포함됨 (409, D-37). 메시지는 해당 메뉴 이름들."""
 
 
 class InvalidTransition(Exception):
@@ -85,6 +89,19 @@ def create_order(
             raise NotFound()
         return order
 
+    # D-37: 쓰기 전에 모든 메뉴를 먼저 검증한다. 메뉴 상태는 menu 모듈 공개 service로만 조회한다.
+    menus = {}
+    unavailable: list[str] = []
+    for item_in in items_in:
+        try:
+            menus[item_in["menu_id"]] = menu_service.get_orderable_menu(db, item_in["menu_id"])
+        except menu_service.NotFound as exc:
+            raise NotFound(str(exc)) from None
+        except menu_service.Unavailable as exc:
+            unavailable.append(str(exc))
+    if unavailable:
+        raise MenuUnavailable(", ".join(dict.fromkeys(unavailable)))
+
     # 신규 생성 시도. 동시 요청(TC-01) 대비: idempotency_keys.key 유니크 제약으로
     # 레이스를 막고, 경쟁에서 진 요청은 IntegrityError를 잡아 승자의 주문을 반환한다.
     order = Order(id=gen_id("o"), table_id=table_id, status=OrderStatus.received.value, total_amount=0)
@@ -93,9 +110,7 @@ def create_order(
     total_amount = 0.0
     stock_warnings: list[dict] = []
     for item_in in items_in:
-        menu = db.get(Menu, item_in["menu_id"])
-        if menu is None:
-            raise NotFound(f"menu {item_in['menu_id']} not found")
+        menu = menus[item_in["menu_id"]]
         qty = int(item_in["qty"])
         order_item = OrderItem(
             order_id=order.id,

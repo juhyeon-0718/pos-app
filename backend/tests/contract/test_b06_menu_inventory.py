@@ -49,7 +49,7 @@ def test_update_menu_not_found(client, db):
     assert r.status_code == 404, r.text
 
 
-def test_deactivate_menu_sets_is_active_false(client, db):
+def test_delete_menu_is_soft_delete_and_keeps_is_active(client, db):
     menu = Menu(name="돈까스", price=8000, category="main", is_active=True)
     db.add(menu)
     db.commit()
@@ -59,7 +59,8 @@ def test_deactivate_menu_sets_is_active_false(client, db):
     assert r.status_code == 204, r.text
 
     db.refresh(menu)
-    assert menu.is_active is False
+    assert menu.deleted_at is not None
+    assert menu.is_active is True  # D-37: 삭제는 일시품절(is_active)과 별개
 
 
 def test_list_menus_requires_some_auth(client, db):

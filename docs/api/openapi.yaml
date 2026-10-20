@@ -250,15 +250,23 @@ paths:
     delete:
       operationId: deleteMenu
       tags: [menus]
-      summary: 메뉴 삭제 (사장). 실제로는 is_active=false로 비활성화한다.
+      summary: |
+        메뉴 삭제 (사장, D-37). 소프트 삭제: `deleted_at`만 기록하고 `is_active`는 바꾸지 않는다.
+        삭제된 메뉴는 목록·수정·레시피에서 사라지고(404) 되돌릴 수 없다. 과거 주문의 메뉴 참조와 스냅샷은 유지된다.
+        일시품절은 삭제가 아니라 PATCH로 `is_active=false`를 보낸다.
       security: [{ bearerAuth: [] }]
       parameters:
         - $ref: '#/components/parameters/MenuId'
       responses:
         '204':
-          description: 비활성화됨
+          description: 삭제됨
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '404':
+          description: 메뉴가 없거나 이미 삭제됨
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
 
   /menus/{menu_id}/recipe:
     get:
@@ -340,6 +348,16 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Order' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '409':
+          description: |
+            주문에 일시품절(`is_active=false`)이거나 삭제된 메뉴가 있음 (D-37). 주문은 하나도 만들어지지 않는다.
+            같은 Idempotency-Key로 이미 만들어진 주문을 다시 요청하면 메뉴 상태와 상관없이 기존 주문을 반환한다.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example:
+                code: MENU_UNAVAILABLE
+                detail: '품절되었거나 삭제된 메뉴가 있어 주문할 수 없습니다: 김치찌개'
         '422':
           description: 같은 Idempotency-Key로 본문이 다른 요청이 재전송됨, 또는 직원 대리 주문에 table_id가 없음
           content:
