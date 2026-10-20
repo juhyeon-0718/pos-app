@@ -39,8 +39,8 @@ def test_b07_partial_cooking_returns_409(client, db):
     _set_item(client, items[1]["id"], "cooking")
     r = _serve(client, order_id)
     assert r.status_code == 409, r.text
-    err = r.json()["detail"]  # FastAPI HTTPException 래핑 아래에 Error 스키마(code, detail)
-    assert err["code"] == "ORDER_ITEMS_NOT_DONE"
-    assert isinstance(err["detail"], str) and err["detail"]
+    body = r.json()  # 계약 Error 스키마: 최상위 {code, detail}
+    assert body["code"] == "ORDER_ITEMS_NOT_DONE"
+    assert isinstance(body["detail"], str) and body["detail"]
     check = client.get("/api/v1/orders/mine", headers=table_session_header()).json()
     assert [o for o in check if o["id"] == order_id][0]["status"] == "cooking"
