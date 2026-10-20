@@ -437,7 +437,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
         '409':
-          description: 허용되지 않는 상태 전이. `served`로 바꿀 때 취소 항목을 뺀 모든 항목이 `done`이 아니면 409 (D-32)
+          description: 허용되지 않는 상태 전이. `served`로 바꿀 때 모든 항목이 `done`이 아니면 409, code=`ORDER_ITEMS_NOT_DONE` (D-32)
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
