@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>75MHz LIVE PUB 로고 사용 시안</title>
+<style>
+  body { margin: 0; font-family: "Segoe UI", "Noto Sans KR", "Malgun Gothic", sans-serif; color: #212121; background: #f5f5f5; }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  p.lead { margin: 0 0 24px; color: #666; }
+  h2 { font-size: 18px; margin: 32px 0 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+  .card { border: 1px solid #d0d0d0; border-radius: 8px; overflow: hidden; background: #fff; }
+  .swatch { display: flex; align-items: center; justify-content: center; min-height: 150px; padding: 16px; }
+  .meta { padding: 12px 16px; font-size: 13px; line-height: 1.5; border-top: 1px solid #e0e0e0; background: #fff; }
+  .meta b { font-size: 14px; }
+  .ok { color: #2e7d32; font-weight: 600; }
+  .row { display: flex; align-items: flex-end; gap: 32px; flex-wrap: wrap; padding: 20px; background: #fff; border: 1px solid #d0d0d0; border-radius: 8px; }
+  .size { text-align: center; font-size: 12px; color: #666; }
+  .size img { display: block; margin: 0 auto 6px; }
+  .bad { opacity: .9; outline: 2px dashed #c62828; outline-offset: 4px; }
+  .mock-bar { display: flex; align-items: center; gap: 16px; padding: 0 24px; min-height: 72px; }
+  .mock-bar .nav { margin-left: auto; font-size: 14px; display: flex; gap: 24px; }
+  .mock-bar .divider { width: 1px; height: 32px; background: currentColor; opacity: .3; }
+  .mock-bar .t { font-weight: 700; font-size: 16px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>75MHz LIVE PUB 로고 사용 시안</h1>
+  <p class="lead">원본 단색 로고에서 만든 파생 파일이다. 모든 값은 더미 화면이다. 대비율은 WCAG 2.1 공식으로 계산했다.</p>
+
+  <h2>1. 배경별 대비</h2>
+  <div class="grid">
+    <div class="card"><div class="swatch" style="background:#fff"><img src="logo-black.png" width="260" alt="75MHz LIVE PUB 검정 로고, 흰 배경"></div>
+      <div class="meta"><b>검정 / 흰 배경 (#ffffff)</b><br>대비 21:1 <span class="ok">AA·AAA 통과</span><br>손님·직원·사장 화면 기본</div></div>
+    <div class="card"><div class="swatch" style="background:#f5f5f5"><img src="logo-black.png" width="260" alt="75MHz LIVE PUB 검정 로고, 연회색 배경"></div>
+      <div class="meta"><b>검정 / 연회색 (--color-bg-secondary)</b><br>대비 19.26:1 <span class="ok">통과</span></div></div>
+    <div class="card"><div class="swatch" style="background:#212121"><img src="logo-white.png" width="260" alt="75MHz LIVE PUB 흰색 로고, 어두운 배경"></div>
+      <div class="meta"><b>흰색 / 어두운 회색 (#212121)</b><br>대비 16.1:1 <span class="ok">통과</span><br>주방 화면 등 어두운 배경</div></div>
+    <div class="card"><div class="swatch" style="background:#121212"><img src="logo-white.png" width="260" alt="75MHz LIVE PUB 흰색 로고, 거의 검정 배경"></div>
+      <div class="meta"><b>흰색 / 거의 검정 (#121212)</b><br>대비 18.73:1 <span class="ok">통과</span></div></div>
+    <div class="card"><div class="swatch" style="background:#1565c0"><img src="logo-white.png" width="260" alt="75MHz LIVE PUB 흰색 로고, 파랑 배경"></div>
+      <div class="meta"><b>흰색 / 파랑 (--color-primary)</b><br>대비 5.75:1 <span class="ok">통과</span><br>검정 로고는 3.65:1이라 파랑 위에서 쓰지 않는다</div></div>
+  </div>
+
+  <h2>2. 작은 크기에서 LIVE PUB 읽힘</h2>
+  <p class="lead">원본은 가로가 길어 높이 40px에서 LIVE PUB 글자가 약 3px이다. 축약형(75MHz 아래 LIVE PUB을 크게 다시 배치)은 같은 높이에서 약 2배 크다.</p>
+  <div class="row">
+    <div class="size"><img class="bad" src="logo-black.png" height="40" alt="원본 40px"><span>원본 높이 40px<br>LIVE PUB 읽기 어려움</span></div>
+    <div class="size"><img src="logo-compact-black.png" height="40" alt="축약형 40px"><span>축약형 40px<br>최소 허용 안 함</span></div>
+    <div class="size"><img src="logo-compact-black.png" height="56" alt="축약형 56px"><span>축약형 56px<br><b>최소 크기 (상단 바)</b></span></div>
+    <div class="size"><img src="logo-compact-black.png" height="80" alt="축약형 80px"><span>축약형 80px<br>모바일 첫 화면</span></div>
+    <div class="size"><img src="logo-black.png" height="120" alt="원본 120px"><span>원본 높이 120px 이상<br>큰 화면·인쇄·QR 카드</span></div>
+  </div>
+
+  <h2>3. 화면 적용</h2>
+  <div class="card" style="margin-bottom:16px">
+    <div class="mock-bar" style="background:#fff; border-bottom:1px solid #d0d0d0">
+      <img src="logo-compact-black.png" height="56" alt="75MHz LIVE PUB"><span class="divider"></span><span class="t">사장 관리</span>
+      <span class="nav"><span>메뉴 관리</span><span>식재료 관리</span></span>
+    </div>
+    <div class="meta">사장 화면 상단 바 (데스크톱). 실제 프로토타입은 <code>owner/prototype/menus.html</code></div>
+  </div>
+  <div class="card">
+    <div class="mock-bar" style="background:#212121; color:#fff">
+      <img src="logo-compact-white.png" height="56" alt="75MHz LIVE PUB"><span class="divider"></span><span class="t">주방</span>
+      <span class="nav"><span>신규 3</span><span>조리중 5</span></span>
+    </div>
+    <div class="meta">주방 화면 상단 바 (어두운 배경, 흰색 로고). 방향 시안이며 U-xx 주방 명세에서 확정</div>
+  </div>
+</main>
+</body>
+</html>

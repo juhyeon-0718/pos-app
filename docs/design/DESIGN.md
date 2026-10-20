@@ -140,3 +140,20 @@
 - U-01: `--color-text-disabled` #cccccc → #767676(1.61:1 → 3.91:1). `--color-border-strong`, `--color-bg-disabled`, `--color-error-hover`, `--color-warning-text`, `--color-text-on-fill`, `--color-focus-ring`, `--color-overlay`, `--size-*` 추가. `--font-family`에 Malgun Gothic 추가.
 - U-01: 이전 표기의 대비율 오류 정정. `--color-warning`은 글자색으로 4.5:1을 만족하지 못한다(2.65:1). `--color-border-default`는 3:1 미달이라 UI 경계로 쓰지 않는다(1.54:1).
 - 기존 로그인·손님·주방·직원 화면이 이 토큰을 쓰는지는 U-02에서 점검한다. 이번 변경으로 그 화면은 수정하지 않았다.
+
+## 브랜드 로고 (Brand)
+
+파일은 `docs/design/brand/`에 있다. 사용 예와 대비 확인은 `brand/logo-preview.html`. 정주현이 저장소 반영을 승인했다(공개 저장소 D-28, 매장 로고는 상표성 자산이라 코드·문구에서 다른 용도로 쓰지 않는다).
+
+- `logo-original.jpg`: 원본(7087×2362, 흰 배경 검정). 인쇄·QR 카드 원본용이며 화면에는 쓰지 않는다.
+- `logo-black.png` / `logo-white.png`: 투명 배경 960px. 원본 구성 그대로. `-sm`은 480px.
+- `logo-compact-black.png` / `logo-compact-white.png`: 투명 배경 640px. 75MHz 아래에 LIVE PUB을 크게 다시 배치한 축약형. 작은 영역용.
+
+### 사용 규칙
+- **LIVE PUB은 항상 보인다.** 로고에서 LIVE PUB을 빼거나 "75MHz"만 쓰지 않는다.
+- **최소 크기**: 원본 구성은 높이 120px 이상(LIVE PUB 글자 약 10px). 그보다 작은 영역(상단 바 등)은 축약형을 높이 56px 이상으로 쓴다. 축약형 56px에서 LIVE PUB 글자는 약 7px이다.
+- **색**: 밝은 배경(`--color-bg-default` 21:1, `--color-bg-secondary` 19.26:1)은 검정, 어두운 배경(#212121 16.1:1, #121212 18.73:1)과 `--color-primary` 위(5.75:1)는 흰색. 검정 로고는 `--color-primary` 위에서 3.65:1이라 쓰지 않는다.
+- **여백**: 로고 높이의 25% 이상을 사방에 비운다. 늘리거나 회전하거나 색을 바꾸지 않는다.
+- **접근성**: `alt="75MHz LIVE PUB"`. 장식으로만 쓰는 반복 배치는 `alt=""`.
+- **화면별**: 사장 상단 바는 축약형 56px(구분선 + 화면 이름 옆에 배치). 손님 화면 첫 화면은 축약형 80px 이상. 주방·직원 화면은 어두운 배경이면 흰색 축약형. 확정은 각 화면 명세에서 한다.
+- 축약형은 원본 로고를 재배치한 파생 파일이다. 정주현이 모양을 확인하기 전까지는 시안 상태다.

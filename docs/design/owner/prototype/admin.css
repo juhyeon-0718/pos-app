@@ -95,7 +95,9 @@ h1, h2, h3, p { margin: 0; }
 /* 앱 상단 바 */
 .app-bar { background: var(--color-bg-default); border-bottom: var(--border-thin) solid var(--color-border-default); }
 .app-bar-inner { max-width: var(--size-page-max); margin: 0 auto; padding: 0 var(--spacing-xl); display: flex; align-items: center; gap: var(--gap-xl); min-height: 56px; }
-.app-title { font-size: var(--font-size-lg); font-weight: var(--font-weight-bold); }
+.app-bar-inner { min-height: 72px; }
+.app-logo { display: block; height: 56px; width: auto; } /* 축약형 최소 높이 56px: LIVE PUB 글자 높이 약 7px */
+.app-title { padding-left: var(--spacing-lg); border-left: var(--border-thin) solid var(--color-border-default); font-size: var(--font-size-lg); font-weight: var(--font-weight-bold); }
 .nav { display: flex; gap: var(--gap-sm); }
 .nav a { display: inline-flex; align-items: center; min-height: var(--size-touch-min); padding: 0 var(--spacing-lg); border-radius: var(--radius-md); color: var(--color-text-secondary); text-decoration: none; font-weight: var(--font-weight-medium); }
 .nav a:hover { background: var(--color-bg-secondary); color: var(--color-text-primary); }
