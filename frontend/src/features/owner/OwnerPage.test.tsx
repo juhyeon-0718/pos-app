@@ -52,7 +52,44 @@ describe("OwnerPage", () => {
     );
     renderPage();
     await userEvent.click(screen.getByRole("button", { name: "식재료" }));
-    await userEvent.click(await screen.findByRole("button", { name: "비활성화" }));
+    await userEvent.click(await screen.findByRole("button", { name: "사용 안 함으로 바꾸기" }));
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("레시피에서 사용 중입니다"));
+  });
+
+  it("is_active=false 식재료는 '사용 안 함'으로 표시하고 버튼을 숨긴다", async () => {
+    useAuthStore.setState({ accessToken: "t", role: "owner" });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url.endsWith("/ingredients")
+          ? list([{ id: "i1", name: "양파", unit: "kg", current_stock: 3, is_active: false }])
+          : list([]),
+      ),
+    );
+    renderPage();
+    await userEvent.click(screen.getByRole("button", { name: "식재료" }));
+    expect(await screen.findByText("사용 안 함")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "사용 안 함으로 바꾸기" })).not.toBeInTheDocument();
+  });
+
+  it("비활성 메뉴를 '지금 판매하나요?'로 다시 판매 상태로 바꿀 수 있다", async () => {
+    useAuthStore.setState({ accessToken: "t", role: "owner" });
+    const f = vi.fn(async (_url: string, init?: RequestInit) =>
+      init?.method === "PATCH"
+        ? json({ id: "m1", name: "김치찌개", price: 8000, is_active: true })
+        : list([{ id: "m1", name: "김치찌개", price: 8000, category: "찌개", is_active: false }]),
+    );
+    vi.stubGlobal("fetch", f);
+    renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "수정" }));
+    const box = screen.getByLabelText("지금 판매하나요?");
+    expect(box).not.toBeChecked();
+    await userEvent.click(box);
+    await userEvent.click(screen.getByRole("button", { name: "수정 저장" }));
+    await waitFor(() => {
+      const patch = f.mock.calls.find((c) => c[1]?.method === "PATCH");
+      expect(patch).toBeTruthy();
+      expect(JSON.parse(patch![1]!.body as string).is_active).toBe(true);
+    });
   });
 });

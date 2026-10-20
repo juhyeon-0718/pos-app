@@ -11,12 +11,14 @@ export function MenuSection() {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("");
+  const [isActive, setIsActive] = useState(true);
 
   function startEdit(m: Menu | null) {
     setEditing(m);
     setName(m?.name ?? "");
     setPrice(m?.price != null ? String(m.price) : "");
     setCategory(m?.category ?? "");
+    setIsActive(m?.is_active ?? true);
     save.reset();
   }
 
@@ -29,7 +31,7 @@ export function MenuSection() {
           name: name.trim(),
           price: Number(price),
           category: category.trim() || undefined,
-          is_active: editing?.is_active ?? true,
+          is_active: isActive,
         },
       },
       { onSuccess: () => startEdit(null) },
@@ -43,6 +45,10 @@ export function MenuSection() {
         <label>이름<input value={name} onChange={(e) => setName(e.target.value)} required /></label>
         <label>가격(원)<input type="number" min="0" value={price} onChange={(e) => setPrice(e.target.value)} required /></label>
         <label>분류<input value={category} onChange={(e) => setCategory(e.target.value)} /></label>
+        <label className="owner-check">
+          <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
+          지금 판매하나요?
+        </label>
         <button type="submit" disabled={save.isPending}>{editing ? "수정 저장" : "메뉴 추가"}</button>
         {editing && <button type="button" className="owner-secondary" onClick={() => startEdit(null)}>취소</button>}
         {save.isError && <p role="alert" className="owner-error">{errorMessage(save.error)}</p>}

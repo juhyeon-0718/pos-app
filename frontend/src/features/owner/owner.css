@@ -14,3 +14,4 @@
 .owner-list li { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--color-border-light, #e0e0e0); }
 .owner-name { font-weight: var(--font-weight-semibold, 600); min-width: 120px; }
 .owner-error { color: var(--color-error, #c62828); width: 100%; }
+.owner-form .owner-check { flex-direction: row; align-items: center; min-height: 44px; }
