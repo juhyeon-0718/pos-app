@@ -40,7 +40,7 @@ function render() {
   main.replaceChildren();
   const lowCount = ING.filter((i) => isLow(i) || (i.is_active && isNeg(i))).length;
   main.append(h('div', { class: 'page-head' },
-    h('div', null, h('h1', { text: '식재료 관리' }), h('p', { class: 'page-sub', text: '레시피에 쓰는 식재료와 안전 재고, 단가를 관리해요.' })),
+    h('div', null, h('h1', { text: '식재료 관리' }), h('p', { class: 'page-sub', text: '레시피에 쓰는 식재료와 최소로 남겨둘 양, 단가를 관리해요.' })),
     btn([icon('plus'), '식재료 추가'], 'primary', () => openForm('create'), (ui.list === 'loading' || ui.list === 'error') ? { disabled: true } : {})));
 
   if (ui.list === 'loading') return main.append(card(h('div', { 'aria-busy': 'true' },
@@ -66,8 +66,8 @@ function render() {
 function headRow() {
   return h('tr', null,
     h('th', { scope: 'col', text: '식재료명' }), h('th', { scope: 'col', text: '단위' }),
-    h('th', { scope: 'col', class: 'num', text: '현재 재고' }), h('th', { scope: 'col', class: 'num', text: '안전 재고' }),
-    h('th', { scope: 'col', class: 'num', text: '리드타임' }), h('th', { scope: 'col', class: 'num', text: '단가' }),
+    h('th', { scope: 'col', class: 'num', text: '현재 재고' }), h('th', { scope: 'col', class: 'num', text: '최소로 남겨둘 양' }),
+    h('th', { scope: 'col', class: 'num', text: '도착까지 며칠' }), h('th', { scope: 'col', class: 'num', text: '단가' }),
     h('th', { scope: 'col', text: '상태' }), h('th', { scope: 'col', class: 'cell-actions' }, h('span', { class: 'sr-only', text: '작업' })));
 }
 
@@ -145,8 +145,8 @@ function formBody(m) {
   if (m.mode === 'edit') body.push(h('div', { class: 'readonly-row' },
     h('span', null, h('span', { class: 'muted', text: '현재 재고 ' }), h('strong', { text: `${num(m.item.current_stock)} ${m.item.unit}` })),
     h('span', { class: 'help', text: '재고 수량은 이 화면에서 바꿀 수 없어요.' })));
-  body.push(numField(m, 'safety_stock', '안전 재고', d.unit || '단위', '이 수량보다 적어지면 "부족"으로 표시해요.', 'any'));
-  body.push(numField(m, 'lead_time_days', '발주 리드타임', '일', '주문하고 받기까지 걸리는 일수예요.', '1'));
+  body.push(numField(m, 'safety_stock', '최소로 남겨둘 양', d.unit || '단위', '이 수량보다 적어지면 "부족"으로 표시해요.', 'any'));
+  body.push(numField(m, 'lead_time_days', '주문 후 도착까지 며칠', '일', '주문하고 받기까지 걸리는 일수예요.', '1'));
   body.push(numField(m, 'unit_price', '단가', '원', '단위 1개당 가격이에요. 발주 비용 계산에 써요.', 'any'));
   body.push(h('label', { class: 'check' },
     h('input', { type: 'checkbox', checked: d.is_active, disabled: busy, onchange: (e) => { d.is_active = e.target.checked; } }),
