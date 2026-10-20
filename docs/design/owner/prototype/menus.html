@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>메뉴 관리 · U-01 프로토타입</title>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<div id="app-bar"></div>
+<div id="proto-bar"></div>
+<main class="page" id="main" aria-live="off"></main>
+<script src="admin.js"></script>
+<script>
+/* 데이터 필드는 openapi.yaml Menu / MenuWrite 그대로: id, name, price, category, is_active. 값은 모두 더미. */
+const { h, icon, won, banner, btn, activeBadge, skeletonCells, openModal, closeModal, toast, appBar, stateBar } = Admin;
+
+let MENUS = [
+  { id: 'm_1', name: '김치찌개', price: 9000, category: '찌개', is_active: true },
+  { id: 'm_2', name: '된장찌개', price: 8500, category: '찌개', is_active: true },
+  { id: 'm_3', name: '제육볶음', price: 11000, category: '볶음', is_active: true },
+  { id: 'm_4', name: '비빔밥', price: 10000, category: '밥', is_active: true },
+  { id: 'm_5', name: '공기밥', price: 1000, category: '밥', is_active: true },
+  { id: 'm_6', name: '계란찜', price: 4000, category: '', is_active: false },
+  { id: 'm_7', name: '아주 긴 이름의 시즌 한정 메뉴 예시 (이름이 길면 말줄임 처리)', price: 15000, category: '시즌', is_active: true }
+];
+
+const ui = { list: 'default', filter: 'all', hasMore: false, modal: null };
+const NAME_MAX = 50; // 제안값. openapi에 maxLength 없음 → 민준에게 요청(명세 §9)
+
+function visible() {
+  return MENUS.filter((m) => ui.filter === 'all' || (ui.filter === 'on' ? m.is_active : !m.is_active));
+}
+
+/* ---------- 화면 ---------- */
+function render() {
+  const main = document.getElementById('main');
+  main.replaceChildren();
+  const disabledAdd = ui.list === 'loading' || ui.list === 'error';
+  main.append(h('div', { class: 'page-head' },
+    h('div', null, h('h1', { text: '메뉴 관리' }), h('p', { class: 'page-sub', text: '손님 주문 화면에 나오는 메뉴와 가격을 관리해요.' })),
+    btn([icon('plus'), '메뉴 추가'], 'primary', () => openForm('create'), disabledAdd ? { disabled: true } : {})));
+
+  if (ui.list === 'loading') return main.append(card(loadingTable()));
+  if (ui.list === 'error') return main.append(card(h('div', { class: 'banner-block' }, banner('error', '메뉴 목록을 불러오지 못했어요.', '네트워크 상태를 확인하고 다시 시도해 주세요.',
+    btn('다시 시도', 'secondary', () => setList('default'))))));
+  if (ui.list === 'empty') return main.append(card(h('div', { class: 'empty' }, icon('info'),
+    h('h2', { text: '아직 등록한 메뉴가 없어요' }),
+    h('p', { text: '첫 메뉴를 추가하면 손님 주문 화면에 바로 나타나요.' }),
+    btn([icon('plus'), '메뉴 추가'], 'primary', () => openForm('create')))));
+
+  const count = (f) => MENUS.filter((m) => f === 'all' || (f === 'on' ? m.is_active : !m.is_active)).length;
+  const seg = h('div', { class: 'seg', role: 'group', 'aria-label': '판매 상태 필터' },
+    ['all:전체', 'on:판매중', 'off:판매중지'].map((s) => {
+      const [k, l] = s.split(':');
+      return h('button', { type: 'button', 'aria-pressed': String(ui.filter === k), onclick: () => { ui.filter = k; render(); }, text: `${l} ${count(k)}` });
+    }));
+  main.append(h('div', { class: 'toolbar' }, seg, h('span', { class: 'result-count', text: `${visible().length}개 표시` })));
+  main.append(card(menuTable()));
+}
+
+function card(...kids) { return h('section', { class: 'card' }, kids.filter((k) => k !== true)); }
+
+function headRow() {
+  return h('tr', null,
+    h('th', { scope: 'col', text: '메뉴명' }), h('th', { scope: 'col', text: '카테고리' }),
+    h('th', { scope: 'col', class: 'num', text: '가격' }), h('th', { scope: 'col', text: '상태' }),
+    h('th', { scope: 'col', class: 'cell-actions' }, h('span', { class: 'sr-only', text: '작업' })));
+}
+
+function loadingTable() {
+  const rows = [0, 1, 2, 3, 4].map(() => h('tr', null, skeletonCells(5)));
+  return h('div', { 'aria-busy': 'true' },
+    h('div', { class: 'loading-note', role: 'status' }, icon('spinner'), '메뉴를 불러오는 중이에요…'),
+    h('table', null, h('thead', null, headRow()), h('tbody', null, rows)));
+}
+
+function menuTable() {
+  const list = visible();
+  if (!list.length) {
+    return h('div', { class: 'empty' }, icon('info'), h('h2', { text: '조건에 맞는 메뉴가 없어요' }),
+      btn('전체 보기', 'secondary', () => { ui.filter = 'all'; render(); }));
+  }
+  const rows = list.map((m) => h('tr', { class: m.is_active ? '' : 'row-inactive' },
+    h('td', { class: 'cell-name', title: m.name, text: m.name }),
+    h('td', { class: m.category ? '' : 'muted', text: m.category || '미분류' }),
+    h('td', { class: 'num', text: won(m.price) }),
+    h('td', null, activeBadge(m.is_active, '판매중', '판매중지')),
+    h('td', { class: 'cell-actions' },
+      btn('수정', 'text', (e) => openForm('edit', m), { 'aria-label': `${m.name} 수정` }),
+      h('a', { class: 'btn btn-text', href: `recipe.html?menu=${m.id}&name=${encodeURIComponent(m.name)}`, 'aria-label': `${m.name} 레시피` }, '레시피'),
+      m.is_active
+        ? btn('삭제', 'text danger', () => openDelete(m), { 'aria-label': `${m.name} 삭제` })
+        : btn('다시 판매', 'text', () => reactivate(m), { 'aria-label': `${m.name} 다시 판매` }))));
+  const more = ui.hasMore ? h('div', { class: 'recipe-foot' },
+    h('span', { class: 'muted', text: '50개씩 불러와요. 더 있어요.' }),
+    ui.list === 'paging'
+      ? btn([icon('spinner'), '불러오는 중…'], 'secondary', () => {}, { disabled: true })
+      : btn('더 보기', 'secondary', () => setList('paging'))) : null;
+  return h('div', null, h('div', { class: 'table-wrap' }, h('table', null,
+    h('caption', { class: 'sr-only', text: '메뉴 목록' }), h('thead', null, headRow()), h('tbody', null, rows))), more);
+}
+
+/* ---------- 추가/수정 모달 ---------- */
+function openForm(mode, item, preset) {
+  const base = item || { name: '', price: '', category: '', is_active: true };
+  ui.modal = Object.assign({ kind: 'form', mode, item, status: 'idle', errors: {}, draft: { ...base } }, preset || {});
+  drawModal();
+}
+
+function validate(d) {
+  const e = {};
+  if (!String(d.name).trim()) e.name = '메뉴 이름을 입력해 주세요.';
+  else if (String(d.name).length > NAME_MAX) e.name = `메뉴 이름은 ${NAME_MAX}자까지 입력할 수 있어요.`;
+  if (d.price === '' || d.price == null) e.price = '가격을 입력해 주세요.';
+  else if (!/^\d+$/.test(String(d.price))) e.price = '가격은 0 이상의 정수로 입력해 주세요. (예: 9000)';
+  return e;
+}
+
+function fieldError(id, text) {
+  return text ? h('div', { class: 'field-error', id }, icon('warn'), h('span', { text })) : null;
+}
+
+function formBody(m) {
+  const d = m.draft, busy = m.status === 'saving';
+  const cats = [...new Set(MENUS.map((x) => x.category).filter(Boolean))];
+  const body = [];
+  if (m.status === 'e409') body.push(banner('error', '같은 이름의 메뉴가 이미 있어요.', '다른 이름으로 바꿔서 저장해 주세요.'));
+  if (m.status === 'e422') body.push(banner('error', '입력한 내용을 저장하지 못했어요.', '이름과 가격을 다시 확인해 주세요.'));
+  body.push(h('div', { class: 'field' },
+    h('label', { for: 'f-name' }, '메뉴 이름', h('span', { class: 'req', 'aria-hidden': 'true', text: '*' })),
+    h('input', { id: 'f-name', class: 'input', type: 'text', value: d.name, maxlength: NAME_MAX + 10, required: true, placeholder: '예: 된장찌개',
+      autocomplete: 'off', disabled: busy, 'aria-invalid': (m.errors.name || m.status === 'e409') ? 'true' : null,
+      'aria-describedby': m.errors.name ? 'e-name' : null, 'data-autofocus': true, oninput: (e) => { d.name = e.target.value; } }),
+    fieldError('e-name', m.errors.name)));
+  body.push(h('div', { class: 'field' },
+    h('label', { for: 'f-price' }, '가격', h('span', { class: 'req', 'aria-hidden': 'true', text: '*' })),
+    h('div', { class: 'input-wrap' },
+      h('input', { id: 'f-price', class: 'input', type: 'number', inputmode: 'numeric', min: '0', step: '1', value: d.price, required: true, placeholder: '예: 9000',
+        disabled: busy, 'aria-invalid': m.errors.price ? 'true' : null, 'aria-describedby': m.errors.price ? 'e-price' : null,
+        oninput: (e) => { d.price = e.target.value; } }),
+      h('span', { class: 'suffix', text: '원' })),
+    fieldError('e-price', m.errors.price)));
+  body.push(h('div', { class: 'field' },
+    h('label', { for: 'f-cat' }, '카테고리'),
+    h('input', { id: 'f-cat', class: 'input', type: 'text', list: 'cat-list', value: d.category || '', placeholder: '예: 찌개, 볶음, 밥', autocomplete: 'off',
+      disabled: busy, 'aria-describedby': 'h-cat', oninput: (e) => { d.category = e.target.value; } }),
+    h('datalist', { id: 'cat-list' }, cats.map((c) => h('option', { value: c }))),
+    h('div', { class: 'help', id: 'h-cat', text: '비워 두면 "미분류"로 보여요.' })));
+  body.push(h('label', { class: 'check' },
+    h('input', { type: 'checkbox', checked: d.is_active, disabled: busy, onchange: (e) => { d.is_active = e.target.checked; } }),
+    h('span', null, '판매 중 ', h('span', { class: 'muted', text: '(손님 주문 화면에 표시)' }))));
+  return body;
+}
+
+function drawModal() {
+  const m = ui.modal;
+  if (!m) return closeModal();
+  if (m.kind === 'form') {
+    const busy = m.status === 'saving';
+    openModal({
+      title: m.mode === 'create' ? '메뉴 추가' : '메뉴 수정', busy, onClose: cancelModal,
+      body: formBody(m),
+      footer: [
+        btn('취소', 'secondary', cancelModal, busy ? { disabled: true } : {}),
+        busy ? btn([icon('spinner'), '저장 중…'], 'primary', () => {}, { disabled: true, 'aria-live': 'polite' })
+             : btn('저장', 'primary', submitForm)
+      ]
+    });
+    const bad = document.querySelector('#overlay [aria-invalid="true"]');
+    if (bad) bad.focus();
+  } else {
+    const m2 = m, name = m2.item.name, busy = m2.status === 'deleting';
+    const body = [];
+    if (m2.status === 'failed') body.push(banner('error', '삭제하지 못했어요.', '잠시 후 다시 시도해 주세요.'));
+    body.push(h('p', null, h('span', { class: 'name-quote', text: `"${name}"` }), ' 메뉴를 삭제할까요?'));
+    body.push(h('p', { class: 'muted', text: '삭제하면 "판매중지"로 바뀌고 손님 주문 화면에서 사라져요. 지난 주문 기록은 그대로 남고, 언제든 "다시 판매"로 되돌릴 수 있어요.' }));
+    openModal({
+      title: '메뉴 삭제', alert: true, busy, onClose: cancelModal, body,
+      footer: [
+        btn('취소', 'secondary', cancelModal, Object.assign({ 'data-autofocus': true }, busy ? { disabled: true } : {})),
+        busy ? btn([icon('spinner'), '삭제 중…'], 'danger', () => {}, { disabled: true })
+             : btn(m2.status === 'failed' ? '다시 시도' : '삭제', 'danger', confirmDelete)
+      ]
+    });
+  }
+}
+
+function cancelModal() { ui.modal = null; closeModal(); }
+
+function submitForm() {
+  const m = ui.modal;
+  m.errors = validate(m.draft);
+  if (Object.keys(m.errors).length) { m.status = 'idle'; return drawModal(); }
+  m.status = 'saving'; drawModal();
+  setTimeout(() => {
+    const d = m.draft;
+    const dup = MENUS.some((x) => x.name === d.name.trim() && (!m.item || x.id !== m.item.id));
+    if (dup) { m.status = 'e409'; return drawModal(); }          // 409 시뮬레이션: 같은 이름
+    const rec = { id: m.item ? m.item.id : 'm_' + (MENUS.length + 1), name: d.name.trim(), price: Number(d.price), category: (d.category || '').trim(), is_active: !!d.is_active };
+    MENUS = m.item ? MENUS.map((x) => (x.id === rec.id ? rec : x)) : [...MENUS, rec];
+    ui.modal = null; closeModal(); render();
+    toast(`"${rec.name}" 메뉴를 저장했어요.`);
+  }, 700);
+}
+
+function openDelete(item) { ui.modal = { kind: 'delete', item, status: 'idle' }; drawModal(); }
+function confirmDelete() {
+  const m = ui.modal; m.status = 'deleting'; drawModal();
+  setTimeout(() => {
+    MENUS = MENUS.map((x) => (x.id === m.item.id ? { ...x, is_active: false } : x));   // DELETE = is_active=false (openapi deleteMenu)
+    ui.modal = null; closeModal(); render();
+    toast(`"${m.item.name}" 메뉴를 삭제했어요. (판매중지로 바뀌었어요)`);
+  }, 600);
+}
+function reactivate(m) {
+  MENUS = MENUS.map((x) => (x.id === m.id ? { ...x, is_active: true } : x));
+  render(); toast(`"${m.name}" 메뉴를 다시 판매해요.`);
+}
+
+/* ---------- 프로토타입 상태 전환 ---------- */
+function setList(key) {
+  ui.list = key === 'paged' ? 'default' : key;
+  ui.hasMore = key === 'paged' || key === 'paging';
+  if (key === 'paging') setTimeout(() => { if (ui.list === 'paging') { ui.list = 'default'; ui.hasMore = false; render(); } }, 900);
+  render();
+}
+function pick(key) {
+  const listKeys = ['default', 'paged', 'paging', 'loading', 'empty', 'error'];
+  if (listKeys.includes(key)) { cancelModal(); return setList(key); }
+  ui.list = 'default'; render();
+  const item = MENUS[1];
+  const bad = { name: '', price: '-5', category: '', is_active: true };
+  if (key === 'm-create') openForm('create');
+  if (key === 'm-edit') openForm('edit', item);
+  if (key === 'm-invalid') openForm('create', null, { draft: bad, errors: validate(bad) });
+  if (key === 'm-saving') openForm('edit', item, { status: 'saving' });
+  if (key === 'm-409') openForm('edit', item, { status: 'e409' });
+  if (key === 'm-422') openForm('edit', item, { status: 'e422' });
+  if (key === 'm-del') openDelete(item);
+  if (key === 'm-delbusy') { openDelete(item); ui.modal.status = 'deleting'; drawModal(); }
+  if (key === 'm-delfail') { openDelete(item); ui.modal.status = 'failed'; drawModal(); }
+  syncBar(key);
+}
+function syncBar(cur) {
+  document.getElementById('proto-bar').replaceChildren(stateBar([
+    { label: '목록', items: [['default', '기본'], ['paged', '더 보기 있음'], ['paging', '더 불러오는 중'], ['loading', '로딩'], ['empty', '빈 상태'], ['error', '오류']].map(([key, label]) => ({ key, label })) },
+    { label: '입력창', items: [['m-create', '추가'], ['m-edit', '수정'], ['m-invalid', '입력 오류'], ['m-saving', '저장 중'], ['m-409', '409 중복'], ['m-422', '422 검증']].map(([key, label]) => ({ key, label })) },
+    { label: '삭제', items: [['m-del', '확인'], ['m-delbusy', '삭제 중'], ['m-delfail', '삭제 실패']].map(([key, label]) => ({ key, label })) }
+  ], cur, pick));
+}
+
+document.getElementById('app-bar').append(appBar('menus'));
+const initial = Admin.stateFromHash('default');
+syncBar(initial);
+render();
+pick(initial);
+</script>
+</body>
+</html>
