@@ -44,9 +44,9 @@ export function MenuSection() {
     );
   }
 
-  function confirmSoldOut(m: Menu) {
-    const msg = `"${m.name}"을(를) 일시품절로 바꿀까요? 손님 메뉴판에서 주문할 수 없게 돼요. 언제든 "판매 다시 시작"으로 되돌릴 수 있어요.`;
-    if (window.confirm(msg)) setSale(m, false);
+  // 일시품절은 되돌릴 수 있으므로 확인창 없이 바로 처리한다(U-01b §2, 민준 리뷰).
+  function pauseSale(m: Menu) {
+    setSale(m, false);
   }
 
   function confirmDelete(m: Menu) {
@@ -108,7 +108,7 @@ export function MenuSection() {
                     판매 다시 시작
                   </button>
                 ) : (
-                  <button type="button" className="owner-secondary" aria-label={`${m.name} 일시품절`} disabled={save.isPending} onClick={() => confirmSoldOut(m)}>
+                  <button type="button" className="owner-secondary" aria-label={`${m.name} 일시품절`} disabled={save.isPending} onClick={() => pauseSale(m)}>
                     일시품절
                   </button>
                 )}

@@ -50,7 +50,7 @@ export function IngredientSection() {
   return (
     <section aria-label="식재료 관리">
       <h2>식재료 관리</h2>
-      <p className="owner-help">식재료의 최소로 남겨둘 양, 도착까지 걸리는 날, 단가를 관리해요.</p>
+      <p className="owner-help">식재료의 최소로 남겨둘 양, 주문 후 도착까지 며칠, 단가를 관리해요.</p>
       <form className="owner-form" onSubmit={onSubmit}>
         <label>식재료 이름 *<input value={name} maxLength={50} placeholder="예: 돼지고기(앞다리)" onChange={(e) => setName(e.target.value)} required /></label>
         <label>단위 *<input value={unit} placeholder="예: kg, 개" onChange={(e) => setUnit(e.target.value)} required /></label>

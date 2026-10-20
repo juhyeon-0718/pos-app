@@ -75,7 +75,9 @@ describe("OwnerPage", () => {
     expect(alert).toHaveTextContent("이미 있는 이름");
   });
 
-  it("활성 메뉴를 '일시품절'로 바꾸면 PATCH로 is_active=false를 보낸다", async () => {
+  it("활성 메뉴를 '일시품절'로 바꾸면 확인창 없이 PATCH로 is_active=false를 보낸다", async () => {
+    const confirmSpy = vi.fn(() => true);
+    vi.stubGlobal("confirm", confirmSpy);
     const f = vi.fn(async (_u: string, init?: RequestInit) =>
       init?.method === "PATCH" ? json(menu({ is_active: false })) : list([menu()]),
     );
@@ -87,6 +89,7 @@ describe("OwnerPage", () => {
       expect(c).toBeTruthy();
       expect(JSON.parse(c![1]!.body as string)).toMatchObject({ name: "김치찌개", price: 8000, is_active: false });
     });
+    expect(confirmSpy).not.toHaveBeenCalled();
   });
 
   it("일시품절 메뉴는 배지와 '판매 다시 시작'을 보여 주고 PATCH로 is_active=true를 보낸다", async () => {
