@@ -38,15 +38,20 @@ def _contract_routes() -> set[tuple[str, str]]:
 
 def test_every_contract_route_is_implemented_except_phase2():
     """openapi의 모든 경로·메서드가 FastAPI 라우트에 있어야 한다(목킹 테스트가 못 잡는 누락 방지)."""
+    # app.routes의 내부 구조는 FastAPI/Starlette 버전마다 달라질 수 있어, 버전과 무관한 공개 결과물인
+    # 생성된 OpenAPI(app.openapi())의 경로·메서드로 구현 여부를 판단한다.
+    generated = app.openapi()["paths"]
     implemented = {
-        (m, re.sub(r"\{[^}]*\}", "{}", r.path.removeprefix("/api/v1")))
-        for r in app.routes
-        if hasattr(r, "methods")
-        for m in r.methods
-        if m not in ("HEAD", "OPTIONS")
+        (method.upper(), re.sub(r"\{[^}]*\}", "{}", path.removeprefix("/api/v1")))
+        for path, ops in generated.items()
+        for method in ops
+        if method in ("get", "post", "put", "patch", "delete")
     }
+    assert implemented, "app.openapi()에서 경로를 하나도 읽지 못했다"
     missing = {(m, p) for (m, p) in _contract_routes() - implemented if p not in _PHASE2_PATHS}
-    assert not missing, f"계약에 있는데 구현되지 않은 경로: {sorted(missing)}"
+    assert not missing, (
+        f"계약에 있는데 구현되지 않은 경로: {sorted(missing)} / 구현된 경로 예: {sorted(implemented)[:5]}"
+    )
 
 
 def _create_order(client, ikey, menu_ids=(MENU_A_ID,)):
