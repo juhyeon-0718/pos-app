@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>레시피 편집 · U-01 프로토타입</title>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<div id="app-bar"></div>
+<div id="proto-bar"></div>
+<main class="page" id="main"></main>
+<script src="admin.js"></script>
+<script>
+/* 필드는 openapi.yaml RecipeItem 그대로: ingredient_id, qty_per_unit, unit. 값은 모두 더미.
+   선택지는 GET /ingredients(is_active=true 위주), 저장은 PUT /menus/{menu_id}/recipe (배열 전체 교체). */
+const { h, icon, num, banner, btn, skeletonCells, openModal, closeModal, toast, appBar, stateBar } = Admin;
+
+const q = new URLSearchParams(location.search);
+const MENU_NAME = q.get('name') || '된장찌개';   // 계약에 GET /menus/{id}가 없어 목록 화면에서 이름을 넘겨받는다(명세 §9)
+const INGS = [
+  { id: 'i_1', name: '돼지고기(앞다리)', unit: 'kg', is_active: true },
+  { id: 'i_2', name: '양파', unit: 'kg', is_active: true },
+  { id: 'i_3', name: '대파', unit: '단', is_active: true },
+  { id: 'i_4', name: '두부', unit: '모', is_active: true },
+  { id: 'i_5', name: '쌀', unit: 'kg', is_active: true },
+  { id: 'i_6', name: '고춧가루', unit: 'g', is_active: true },
+  { id: 'i_7', name: '계란', unit: '판', is_active: false }
+];
+const ingOf = (id) => INGS.find((i) => i.id === id);
+const SAVED_DEFAULT = [
+  { ingredient_id: 'i_4', qty_per_unit: 0.5 }, { ingredient_id: 'i_2', qty_per_unit: 0.1 }, { ingredient_id: 'i_6', qty_per_unit: 5 }
+];
+let seq = 0;
+const mkRow = (r) => ({ key: 'r' + (++seq), ingredient_id: r ? r.ingredient_id : '', qty: r ? String(r.qty_per_unit) : '' });
+
+const ui = { list: 'default', rows: [], saved: [], touched: false, status: 'idle', leave: false };
+
+function load(rec) { ui.saved = rec.map((r) => ({ ...r })); ui.rows = rec.map(mkRow); ui.touched = false; ui.status = 'idle'; }
+const snapshot = () => JSON.stringify(ui.rows.map((r) => [r.ingredient_id, String(r.qty)]));
+const savedSnap = () => JSON.stringify(ui.saved.map((r) => [r.ingredient_id, String(r.qty_per_unit)]));
+const dirty = () => snapshot() !== savedSnap();
+
+function rowErrors() {
+  const seen = {}, out = {};
+  ui.rows.forEach((r) => {
+    const e = {};
+    if (!r.ingredient_id) e.ing = '식재료를 선택해 주세요.';
+    else if (seen[r.ingredient_id]) e.ing = '이미 추가한 식재료예요.';
+    seen[r.ingredient_id] = true;
+    if (!(Number(r.qty) > 0) || r.qty === '') e.qty = '0보다 큰 수량을 입력해 주세요.';
+    if (Object.keys(e).length) out[r.key] = e;
+  });
+  return out;
+}
+
+function render(focusKey) {
+  const main = document.getElementById('main');
+  main.replaceChildren();
+  main.append(h('button', { type: 'button', class: 'crumb', onclick: goBack }, '← 메뉴 목록으로'));
+  main.append(h('div', { class: 'page-head' },
+    h('div', null, h('h1', { text: `${MENU_NAME} 레시피` }),
+      h('p', { class: 'page-sub', text: '손님이 이 메뉴를 1개 주문할 때 줄어드는 식재료와 양이에요.' }))));
+
+  if (ui.list === 'loading') {
+    return main.append(h('section', { class: 'card', 'aria-busy': 'true' },
+      h('div', { class: 'loading-note', role: 'status' }, icon('spinner'), '레시피를 불러오는 중이에요…'),
+      h('table', null, h('tbody', null, [0, 1, 2].map(() => h('tr', null, skeletonCells(3))))),
+      h('div', { class: 'recipe-foot' }, btn([icon('plus'), '재료 추가'], 'secondary', () => {}, { disabled: true }))),
+      saveBar(true));
+  }
+  if (ui.list === 'error') {
+    return main.append(h('section', { class: 'card' }, h('div', { class: 'banner-block' },
+      banner('error', '레시피를 불러오지 못했어요.', '네트워크 상태를 확인하고 다시 시도해 주세요.', btn('다시 시도', 'secondary', () => pick('default'))))));
+  }
+
+  const card = h('section', { class: 'card' });
+  const errs = ui.touched ? rowErrors() : {};
+  if (ui.status === 'e409') card.append(h('div', { class: 'banner-block' }, banner('error', '레시피를 저장하지 못했어요.', '식재료 정보가 바뀌었을 수 있어요. 목록을 새로 불러온 뒤 다시 확인해 주세요.')));
+  if (ui.status === 'e422') card.append(h('div', { class: 'banner-block' }, banner('error', '입력한 내용을 저장하지 못했어요.', '식재료와 수량을 다시 확인해 주세요.')));
+  if (ui.rows.some((r) => r.ingredient_id && ingOf(r.ingredient_id) && !ingOf(r.ingredient_id).is_active))
+    card.append(h('div', { class: 'banner-block' }, banner('warning', '사용중지된 식재료가 레시피에 있어요.', '식재료 관리에서 다시 사용으로 바꾸거나, 다른 식재료로 바꿔 주세요.')));
+
+  if (!ui.rows.length) {
+    card.append(h('div', { class: 'empty' }, icon('info'),
+      h('h2', { text: '아직 레시피가 없어요' }),
+      h('p', { text: '레시피를 등록하지 않으면 이 메뉴가 주문돼도 식재료 재고가 줄지 않아요.' }),
+      btn([icon('plus'), '재료 추가'], 'primary', addRow)));
+  } else {
+    const busy = ui.status === 'saving';
+    card.append(h('div', { class: 'recipe-grid head' },
+      h('span', { text: '식재료' }), h('span', { text: '메뉴 1개당 사용량' }), h('span', { text: '단위' }), h('span', { class: 'sr-only', text: '빼기' })));
+    ui.rows.forEach((r, idx) => {
+      const e = errs[r.key] || {}, ing = ingOf(r.ingredient_id);
+      const opts = [h('option', { value: '', text: '식재료 선택' })].concat(
+        INGS.filter((i) => i.is_active || i.id === r.ingredient_id).map((i) => h('option', { value: i.id, selected: i.id === r.ingredient_id, text: i.name + (i.is_active ? '' : ' (사용중지)') })));
+      card.append(h('div', { class: 'recipe-grid' },
+        h('div', { class: 'field' },
+          h('label', { class: 'sr-only', for: 'ing-' + r.key, text: `${idx + 1}번째 식재료` }),
+          h('select', { id: 'ing-' + r.key, class: 'input', disabled: busy, 'aria-invalid': e.ing ? 'true' : null, 'aria-describedby': e.ing ? 'ei-' + r.key : null,
+            onchange: (ev) => { r.ingredient_id = ev.target.value; render('ing-' + r.key); } }, opts),
+          e.ing ? h('div', { class: 'field-error', id: 'ei-' + r.key }, icon('warn'), h('span', { text: e.ing })) : null),
+        h('div', { class: 'field' },
+          h('label', { class: 'sr-only', for: 'qty-' + r.key, text: `${idx + 1}번째 사용량` }),
+          h('input', { id: 'qty-' + r.key, class: 'input', type: 'number', inputmode: 'decimal', min: '0', step: 'any', value: r.qty, placeholder: '예: 0.5', disabled: busy,
+            'aria-invalid': e.qty ? 'true' : null, 'aria-describedby': e.qty ? 'eq-' + r.key : null,
+            oninput: (ev) => { r.qty = ev.target.value; refreshSave(); } }),
+          e.qty ? h('div', { class: 'field-error', id: 'eq-' + r.key }, icon('warn'), h('span', { text: e.qty })) : null),
+        h('div', { class: 'unit', text: ing ? ing.unit : '-' }),
+        btn(icon('x'), 'text danger', () => { ui.rows = ui.rows.filter((x) => x.key !== r.key); render(); },
+          { 'aria-label': `${ing ? ing.name : idx + 1 + '번째 재료'} 빼기`, disabled: busy, style: 'padding:0' })));
+    });
+    card.append(h('div', { class: 'recipe-foot' }, btn([icon('plus'), '재료 추가'], 'secondary', addRow, ui.status === 'saving' ? { disabled: true } : {})));
+  }
+  main.append(card, saveBar(false));
+  if (focusKey) { const el = document.getElementById(focusKey); if (el) el.focus(); }
+  else if (ui.touched) { const bad = main.querySelector('[aria-invalid="true"]'); if (bad && ui.status === 'idle' && ui.justValidated) { bad.focus(); ui.justValidated = false; } }
+}
+
+function saveBar(forceDisabled) {
+  const busy = ui.status === 'saving', isDirty = dirty();
+  const disabled = forceDisabled || busy || !isDirty;
+  return h('div', { class: 'save-bar', id: 'save-bar' },
+    isDirty && !busy ? h('span', { class: 'dirty-note' }, icon('warn'), '저장하지 않은 변경이 있어요') : null,
+    btn('취소', 'secondary', goBack, busy || forceDisabled ? { disabled: true } : {}),
+    busy ? btn([icon('spinner'), '저장 중…'], 'primary', () => {}, { disabled: true })
+         : btn('저장', 'primary', save, disabled ? { disabled: true } : {}));
+}
+function refreshSave() { const old = document.getElementById('save-bar'); if (old) old.replaceWith(saveBar(false)); }
+
+function addRow() { ui.rows.push(mkRow()); render(); const last = ui.rows[ui.rows.length - 1]; const el = document.getElementById('ing-' + last.key); if (el) el.focus(); }
+
+function save() {
+  ui.touched = true;
+  if (Object.keys(rowErrors()).length) { ui.justValidated = true; return render(); }
+  ui.status = 'saving'; render();
+  setTimeout(() => {
+    ui.saved = ui.rows.map((r) => ({ ingredient_id: r.ingredient_id, qty_per_unit: Number(r.qty) }));
+    ui.status = 'idle'; ui.touched = false; render(); toast(`${MENU_NAME} 레시피를 저장했어요.`);
+  }, 700);
+}
+
+function goBack() {
+  if (dirty()) return leaveModal();
+  location.href = 'menus.html';
+}
+function leaveModal() {
+  openModal({ title: '저장하지 않고 나갈까요?', alert: true, onClose: closeModal,
+    body: [h('p', { text: '저장하지 않은 변경 내용은 사라져요.' })],
+    footer: [btn('계속 편집', 'secondary', () => closeModal(), { 'data-autofocus': true }), btn('나가기', 'danger', () => { location.href = 'menus.html'; })] });
+}
+
+/* ---------- 프로토타입 상태 전환 ---------- */
+function pick(key) {
+  closeModal(true);
+  ui.list = 'default'; ui.status = 'idle'; load(SAVED_DEFAULT);
+  if (key === 'loading' || key === 'error') ui.list = key;
+  if (key === 'empty') load([]);
+  if (key === 'dirty') { ui.rows[1].qty = '0.2'; ui.rows.push(mkRow()); }
+  if (key === 'invalid') { ui.rows.push(mkRow({ ingredient_id: 'i_4', qty_per_unit: 0 })); ui.rows.push(mkRow()); ui.touched = true; }
+  if (key === 'saving') { ui.rows[0].qty = '0.7'; ui.status = 'saving'; }
+  if (key === 'e409') { ui.rows[0].qty = '0.7'; ui.status = 'e409'; }
+  if (key === 'e422') { ui.rows[0].qty = '0.7'; ui.status = 'e422'; }
+  if (key === 'inactive') { ui.saved = [...ui.saved, { ingredient_id: 'i_7', qty_per_unit: 0.05 }]; ui.rows.push(mkRow({ ingredient_id: 'i_7', qty_per_unit: 0.05 })); }
+  render();
+  if (key === 'leave') { ui.rows[0].qty = '0.7'; render(); leaveModal(); }
+  const mk = (arr) => arr.map(([k, l]) => ({ key: k, label: l }));
+  document.getElementById('proto-bar').replaceChildren(stateBar([
+    { label: '목록', items: mk([['default', '기본'], ['dirty', '변경 있음'], ['inactive', '사용중지 재료 포함'], ['loading', '로딩'], ['empty', '빈 상태'], ['error', '조회 오류']]) },
+    { label: '저장', items: mk([['invalid', '입력 오류'], ['saving', '저장 중'], ['e409', '409'], ['e422', '422'], ['leave', '나가기 확인']]) }
+  ], key, pick));
+}
+
+document.getElementById('app-bar').append(appBar('menus'));
+pick(Admin.stateFromHash('default'));
+</script>
+</body>
+</html>
