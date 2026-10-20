@@ -14,6 +14,14 @@ class IngredientOut(BaseModel):
     is_active: bool
 
 
+class IngredientListOut(BaseModel):
+    """계약 IngredientListResponse. 커서 페이지네이션 미구현(항상 전체 반환)."""
+
+    items: list[IngredientOut]
+    next_cursor: str | None = None
+    has_more: bool = False
+
+
 class IngredientWriteIn(BaseModel):
     name: str
     unit: str
@@ -29,6 +37,14 @@ class StockMovementOut(BaseModel):
     type: str
     ref_id: str | None = None
     created_at: datetime
+
+
+class StockMovementListOut(BaseModel):
+    """계약 StockMovementListResponse. 커서 페이지네이션 미구현(항상 전체 반환)."""
+
+    items: list[StockMovementOut]
+    next_cursor: str | None = None
+    has_more: bool = False
 
 
 class MovementCreateIn(BaseModel):

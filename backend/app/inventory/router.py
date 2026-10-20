@@ -4,7 +4,14 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import require_owner
 from app.db import get_db
 from app.inventory import service
-from app.inventory.schemas import IngredientOut, IngredientWriteIn, MovementCreateIn, StockMovementOut
+from app.inventory.schemas import (
+    IngredientListOut,
+    IngredientOut,
+    IngredientWriteIn,
+    MovementCreateIn,
+    StockMovementListOut,
+    StockMovementOut,
+)
 from app.models.ingredient import Ingredient
 
 router = APIRouter(tags=["ingredients"])
@@ -34,9 +41,11 @@ def _movement_out(movement) -> StockMovementOut:
     )
 
 
-@router.get("/ingredients", response_model=list[IngredientOut])
+@router.get("/ingredients", response_model=IngredientListOut)
 def list_ingredients(db: Session = Depends(get_db), _owner=Depends(require_owner)):
-    return [_ingredient_out(ing, stock) for ing, stock in service.list_ingredients_with_stock(db)]
+    return IngredientListOut(
+        items=[_ingredient_out(ing, stock) for ing, stock in service.list_ingredients_with_stock(db)]
+    )
 
 
 @router.post("/ingredients", response_model=IngredientOut, status_code=201)
@@ -84,13 +93,13 @@ def deactivate_ingredient(ingredient_id: str, db: Session = Depends(get_db), _ow
     return _ingredient_out(ingredient, current)
 
 
-@router.get("/ingredients/{ingredient_id}/movements", response_model=list[StockMovementOut])
+@router.get("/ingredients/{ingredient_id}/movements", response_model=StockMovementListOut)
 def list_movements(ingredient_id: str, db: Session = Depends(get_db), _owner=Depends(require_owner)):
     try:
         movements = service.list_movements(db, ingredient_id)
     except service.NotFound as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from None
-    return [_movement_out(m) for m in movements]
+    return StockMovementListOut(items=[_movement_out(m) for m in movements])
 
 
 @router.post("/ingredients/{ingredient_id}/movements", response_model=StockMovementOut, status_code=201)

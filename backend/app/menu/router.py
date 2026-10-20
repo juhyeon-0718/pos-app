@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import get_current_role, require_any_auth, require_owner
 from app.db import get_db
 from app.menu import service
-from app.menu.schemas import MenuOut, MenuWriteIn, RecipeItemIn, RecipeItemOut
+from app.menu.schemas import MenuListOut, MenuOut, MenuWriteIn, RecipeItemIn, RecipeItemOut
 
 router = APIRouter(tags=["menus"])
 
@@ -13,9 +13,9 @@ def _menu_out(menu) -> MenuOut:
     return MenuOut.model_validate(menu)
 
 
-@router.get("/menus", response_model=list[MenuOut])
+@router.get("/menus", response_model=MenuListOut)
 def list_menus(db: Session = Depends(get_db), _auth=Depends(require_any_auth)):
-    return [_menu_out(m) for m in service.list_menus(db)]
+    return MenuListOut(items=[_menu_out(m) for m in service.list_menus(db)])
 
 
 @router.post("/menus", response_model=MenuOut, status_code=201)
