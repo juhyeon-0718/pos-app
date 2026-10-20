@@ -74,6 +74,11 @@ def test_list_menus_with_table_token(client, db):
     seed(db)
     r = client.get("/api/v1/menus", headers=table_session_header())
     assert r.status_code == 200, r.text
+    body = r.json()
+    # 계약 MenuListResponse: 최상위가 배열이 아니라 {items, next_cursor, has_more}
+    assert isinstance(body, dict)
+    assert body["has_more"] is False and body["next_cursor"] is None
+    assert len(body["items"]) >= 1
 
 
 # ──────────────────────────────────────────────────────────────
@@ -120,7 +125,9 @@ def test_create_ingredient_and_list_shows_zero_stock(client, db):
 
     r2 = client.get("/api/v1/ingredients", headers=owner)
     assert r2.status_code == 200, r2.text
-    names = [i["name"] for i in r2.json()]
+    assert set(r2.json()) >= {"items", "next_cursor", "has_more"}
+    assert r2.json()["has_more"] is False
+    names = [i["name"] for i in r2.json()["items"]]
     assert "양파" in names
 
 
@@ -171,13 +178,14 @@ def test_create_movement_updates_current_stock(client, db):
     assert r.status_code == 201, r.text
 
     r2 = client.get("/api/v1/ingredients", headers=owner)
-    body = next(i for i in r2.json() if i["id"] == ingredient.id)
+    body = next(i for i in r2.json()["items"] if i["id"] == ingredient.id)
     assert body["current_stock"] == 50.0
 
     r3 = client.get(f"/api/v1/ingredients/{ingredient.id}/movements", headers=owner)
     assert r3.status_code == 200, r3.text
-    assert len(r3.json()) == 1
-    assert r3.json()[0]["type"] == "restock"
+    assert set(r3.json()) >= {"items", "next_cursor", "has_more"}
+    assert len(r3.json()["items"]) == 1
+    assert r3.json()["items"][0]["type"] == "restock"
 
 
 def test_create_movement_invalid_type_returns_422(client, db):
