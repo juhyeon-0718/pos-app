@@ -4,6 +4,7 @@
 
 import type { components } from "./schema";
 import { authorizedFetch } from "./httpClient";
+import { ownerFetch } from "./ownerFetch";
 
 export type Menu = components["schemas"]["Menu"];
 
@@ -38,3 +39,21 @@ export async function fetchMenusAsStaff(
   const body: components["schemas"]["MenuListResponse"] = await res.json();
   return body.items ?? [];
 }
+
+// ---- 사장용 메뉴 관리 (F-06). 레시피는 D-34로 2차 범위라 호출하지 않는다. ----
+
+export type MenuWrite = components["schemas"]["MenuWrite"];
+
+export async function listMenusAsOwner(token: string): Promise<Menu[]> {
+  const body = await ownerFetch<components["schemas"]["MenuListResponse"]>(token, "/menus");
+  return body.items ?? [];
+}
+
+export const createMenu = (token: string, data: MenuWrite) =>
+  ownerFetch<Menu>(token, "/menus", { method: "POST", body: data });
+
+export const updateMenu = (token: string, id: string, data: MenuWrite) =>
+  ownerFetch<Menu>(token, `/menus/${encodeURIComponent(id)}`, { method: "PATCH", body: data });
+
+export const deleteMenu = (token: string, id: string) =>
+  ownerFetch<void>(token, `/menus/${encodeURIComponent(id)}`, { method: "DELETE" });
