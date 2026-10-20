@@ -16,7 +16,7 @@ export function OwnerPage() {
   if (role !== "owner") {
     return (
       <main className="owner-page">
-        <p role="alert" className="owner-error">사장 계정으로 로그인해 주세요.</p>
+        <p role="alert" className="owner-banner">사장 계정만 관리할 수 있어요.</p>
       </main>
     );
   }
@@ -25,8 +25,8 @@ export function OwnerPage() {
     <main className="owner-page">
       <h1>사장 관리</h1>
       <nav className="owner-tabs" aria-label="관리 메뉴">
-        <button type="button" aria-pressed={tab === "menus"} onClick={() => setTab("menus")}>메뉴</button>
-        <button type="button" aria-pressed={tab === "ingredients"} onClick={() => setTab("ingredients")}>식재료</button>
+        <button type="button" aria-pressed={tab === "menus"} onClick={() => setTab("menus")}>메뉴 관리</button>
+        <button type="button" aria-pressed={tab === "ingredients"} onClick={() => setTab("ingredients")}>식재료 관리</button>
       </nav>
       {tab === "menus" && <MenuSection />}
       {tab === "ingredients" && <IngredientSection />}
