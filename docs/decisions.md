@@ -215,3 +215,17 @@
 - 날짜: 2026-10-20
 - 결정: 1차 파일럿에는 주문 항목 단위 취소가 없다. 취소는 주문 단위로만 한다. `ItemStatus`는 `pending`, `cooking`, `done` 세 값을 유지한다. D-32의 "취소 항목 제외" 조건은 항목 취소가 생길 때(2차) enum과 계약을 함께 바꾸며 구현한다. 그때까지 `served` 조건은 "모든 항목이 `done`"이다.
 - 이유: enum에 없는 문자열(`"cancelled"`)을 코드에서 특별 취급하면 계약에 없는 숨은 상태가 생긴다. 다른 코드(`ItemStatus(...)` 변환)가 그 값을 만나면 오류가 난다.
+
+## D-36 파일럿 운영 서버: Render
+- 날짜: 2026-10-20
+- 결정: 1차 파일럿(D-30)의 운영 환경을 Render(관리형 호스팅, 싱가포르 리전)에 둔다. D-30의 "서버 위치는 별도 결정"을 이 결정으로 확정한다.
+  - 구성: 백엔드 Web Service(FastAPI, uvicorn), Render Postgres(유료 플랜, 자동 백업), 프론트 Static Site(Vite 빌드 결과). 무료 플랜은 유휴 시 잠들어 쓰지 않는다.
+  - 주소: 프론트와 API를 한 주소로 묶는다. Static Site에서 `/api/*`는 백엔드 서비스로 재작성(rewrite)하고, 나머지 경로는 `/index.html`로 보낸다. CORS를 추가하지 않고 계약의 `servers: /api/v1`과 프론트 `BASE_URL`을 그대로 쓴다.
+  - 설정은 저장소 루트 `render.yaml`(Blueprint)로 코드화한다. main 머지 시 자동 배포하고, 배포 전에 `alembic upgrade head`를 실행한다.
+  - 비밀값(`JWT_SECRET`, `DATABASE_URL`)은 Render가 생성·연결하거나 정주현이 Render 대시보드에서 입력한다. 저장소, 채팅, 로그에 쓰지 않는다. `ENV=prod`(D-22).
+  - Postgres는 18(D-21)을 쓴다. Render가 18을 지원하지 않으면 지원하는 최신 버전을 쓰고 이 항목에 기록한다.
+  - 파일럿 주소는 Render 기본 주소(`*.onrender.com`, HTTPS 자동)를 쓴다. 자체 도메인은 2차에 검토하며, 바꾸면 테이블 QR을 다시 인쇄한다.
+  - 실매장 메뉴가 오기 전까지 운영 DB에는 가상 데이터(Q-04 `docs/qa/sample-store-data.xlsx`)를 넣고, 실데이터를 받으면 교체한다.
+- 이유: 배포·운영 담당(D-23)인 정주현이 서버 관리 경험이 적으므로 OS 업데이트, HTTPS 인증서, DB 백업을 관리형 서비스에 맡긴다. GitHub 머지 시 자동 배포되어 PR 흐름(D-29)과 맞는다. 프론트와 API를 한 주소로 묶어 CORS 설정과 프론트 코드 변경을 없앤다. 비용은 월 약 $13~20이다.
+- 영향: Render GitHub App에 `juhyeon-0718/pos-app` 읽기 권한을 준다(외부 연동, 정주현 수행). 계정과 결제는 정주현 명의다. 2차의 SSE는 rewrite 경유 시 버퍼링 여부를 따로 확인한다.
+- 확인: 정주현 (2026-10-20, Slack, 선택지 A)
