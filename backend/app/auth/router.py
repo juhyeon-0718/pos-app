@@ -10,10 +10,12 @@ from app.auth.schemas import (
     QrReissueOut,
     StreamTokenOut,
     TableCreateIn,
+    TableListOut,
     TableOut,
     TableSessionIn,
     TableSessionOut,
     UserCreateIn,
+    UserListOut,
     UserOut,
     UserUpdateIn,
 )
@@ -47,9 +49,9 @@ def issue_stream_token(current=Depends(get_current_user)):
     return StreamTokenOut(token=token, expires_at=utcnow() + STREAM_TOKEN_TTL)
 
 
-@router.get("/users", response_model=list[UserOut])
+@router.get("/users", response_model=UserListOut)
 def list_users(db: Session = Depends(get_db), _owner=Depends(require_owner)):
-    return [_user_out(u) for u in service.list_users(db)]
+    return UserListOut(items=[_user_out(u) for u in service.list_users(db)])
 
 
 @router.post("/users", response_model=UserOut, status_code=201)
@@ -76,9 +78,9 @@ def update_user(user_id: str, body: UserUpdateIn, db: Session = Depends(get_db),
     return _user_out(user)
 
 
-@router.get("/tables", response_model=list[TableOut])
+@router.get("/tables", response_model=TableListOut)
 def list_tables(db: Session = Depends(get_db), _owner=Depends(require_owner)):
-    return [_table_out(t) for t in service.list_tables(db)]
+    return TableListOut(items=[_table_out(t) for t in service.list_tables(db)])
 
 
 @router.post("/tables", response_model=TableOut, status_code=201)

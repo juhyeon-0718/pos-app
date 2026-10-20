@@ -47,6 +47,20 @@ def create_user(db: Session, *, username: str, password: str, role: str) -> User
     return repository.create_user(db, username=username, password_hash=hash_password(password), role=role)
 
 
+def bootstrap_owner(db: Session, *, username: str, password: str) -> User | None:
+    """owner가 한 명도 없을 때만 owner를 만든다. 이미 있으면 아무것도 바꾸지 않고 None."""
+    if repository.count_users_by_role(db, "owner") > 0:
+        return None
+    return create_user(db, username=username, password=password, role="owner")
+
+
+def ensure_user(db: Session, *, username: str, password: str, role: str) -> User | None:
+    """같은 username이 이미 있으면 바꾸지 않고 None, 없으면 만든다(멱등)."""
+    if repository.get_user_by_username(db, username) is not None:
+        return None
+    return create_user(db, username=username, password=password, role=role)
+
+
 def update_user(db: Session, user_id: str, *, password: str | None, role: str | None, is_active: bool | None) -> User:
     user = repository.get_user_by_id(db, user_id)
     if user is None:
@@ -61,6 +75,15 @@ def list_tables(db: Session) -> list[Table]:
 
 def create_table(db: Session, *, table_no: int) -> Table:
     return repository.create_table(db, table_no=table_no)
+
+
+def ensure_tables(db: Session, *, count: int) -> list[Table]:
+    """table_no 1..count를 보장한다. 이미 있는 테이블(QR 포함)은 건드리지 않는다(멱등)."""
+    existing = {t.table_no: t for t in repository.list_tables(db)}
+    for no in range(1, count + 1):
+        if no not in existing:
+            existing[no] = repository.create_table(db, table_no=no)
+    return [existing[no] for no in range(1, count + 1)]
 
 
 def create_table_session(db: Session, *, table_id: str, qr_token: str) -> str:

@@ -46,6 +46,22 @@ class TableOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class UserListOut(BaseModel):
+    """계약 UserListResponse. 커서 페이지네이션 미구현(항상 전체 반환)."""
+
+    items: list[UserOut]
+    next_cursor: str | None = None
+    has_more: bool = False
+
+
+class TableListOut(BaseModel):
+    """계약 TableListResponse. 커서 페이지네이션 미구현(항상 전체 반환)."""
+
+    items: list[TableOut]
+    next_cursor: str | None = None
+    has_more: bool = False
+
+
 class TableCreateIn(BaseModel):
     table_no: int
 

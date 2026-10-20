@@ -17,6 +17,10 @@ def list_users(db: Session) -> list[User]:
     return list(db.execute(select(User).order_by(User.created_at)).scalars().all())
 
 
+def count_users_by_role(db: Session, role: str) -> int:
+    return len(db.execute(select(User.id).where(User.role == role)).all())
+
+
 def create_user(db: Session, *, username: str, password_hash: str, role: str) -> User:
     user = User(username=username, password_hash=password_hash, role=role)
     db.add(user)
