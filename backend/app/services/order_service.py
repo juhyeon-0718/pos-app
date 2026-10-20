@@ -4,6 +4,7 @@
 """
 import hashlib
 import json
+from datetime import datetime
 from dataclasses import dataclass, field
 
 from sqlalchemy import select
@@ -152,6 +153,41 @@ def create_order(
     db.refresh(order)
     order._stock_warnings = stock_warnings
     return order
+
+
+def list_orders(
+    db: Session, *, status: str | None = None, from_: datetime | None = None, to: datetime | None = None
+) -> list[Order]:
+    """전체 주문 조회(직원/주방/사장). 최신 주문이 먼저. 페이지네이션은 파일럿에서 미구현."""
+    stmt = select(Order)
+    if status is not None:
+        stmt = stmt.where(Order.status == status)
+    if from_ is not None:
+        stmt = stmt.where(Order.created_at >= from_)
+    if to is not None:
+        stmt = stmt.where(Order.created_at < to)
+    return list(db.execute(stmt.order_by(Order.created_at.desc(), Order.id.desc())).scalars().all())
+
+
+def get_order(db: Session, order_id: str) -> Order:
+    order = db.get(Order, order_id)
+    if order is None:
+        raise NotFound()
+    return order
+
+
+def kitchen_queue(db: Session) -> list[OrderItem]:
+    """조리 대기/진행 항목(pending, cooking). 취소된 주문은 제외하고 오래된 주문부터."""
+    stmt = (
+        select(OrderItem)
+        .join(Order, Order.id == OrderItem.order_id)
+        .where(
+            OrderItem.item_status.in_([ItemStatus.pending.value, ItemStatus.cooking.value]),
+            Order.status != OrderStatus.cancelled.value,
+        )
+        .order_by(Order.created_at.asc(), OrderItem.id.asc())
+    )
+    return list(db.execute(stmt).scalars().all())
 
 
 def _order_reached_cooking_stage(order: Order) -> bool:

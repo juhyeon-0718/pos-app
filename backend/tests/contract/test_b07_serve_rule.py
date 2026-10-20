@@ -16,7 +16,7 @@ def _serve(client, order_id):
 
 
 def _set_item(client, item_id, status):
-    r = client.patch(f"/api/v1/kitchen/items/{item_id}/status", json={"status": status})
+    r = client.patch(f"/api/v1/kitchen/items/{item_id}/status", headers=auth_header("kitchen"), json={"status": status})
     assert r.status_code == 200, r.text
 
 

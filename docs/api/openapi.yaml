@@ -1071,6 +1071,7 @@ components:
         qty: { type: integer }
         price_snapshot: { type: number }
         item_status: { type: string, enum: [pending, cooking, done] }
+        table_no: { type: integer, description: 이 항목이 속한 주문의 테이블 번호(현장에서 읽는 번호). table_id는 내부 식별자라 화면에 보이지 않는다. }
 
     OrderItemInput:
       type: object
@@ -1105,6 +1106,7 @@ components:
       properties:
         id: { type: string }
         table_id: { type: string }
+        table_no: { type: integer, description: 테이블 번호(현장에서 읽는 번호). 화면에는 table_id 대신 이 값을 보여 준다. }
         status: { $ref: '#/components/schemas/OrderStatus' }
         total_amount: { type: number }
         created_at: { type: string, format: date-time }

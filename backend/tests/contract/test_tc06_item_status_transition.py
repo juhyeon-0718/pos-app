@@ -18,7 +18,7 @@ from app.models.ingredient import Ingredient
 from app.models.menu import Menu
 from app.models.order import Order, OrderItem
 from app.models.recipe import RecipeItem
-from tests.conftest import table_session_header
+from tests.conftest import table_session_header, auth_header
 from tests.seed import INGREDIENT_X_ID, MENU_A_ID, seed
 
 IKEY_06A = "550e8400-e29b-41d4-a716-446655440006"
@@ -70,7 +70,7 @@ def test_tc06a_first_item_cooking_transitions_order_to_cooking(client, db):
     # 첫 번째 아이템 cooking
     r = client.patch(
         f"/api/v1/kitchen/items/{items[0]['id']}/status",
-        json={"status": "cooking"},
+        headers=auth_header("kitchen"), json={"status": "cooking"},
     )
     assert r.status_code == 200, f"아이템 상태 변경 실패: {r.text}"
     assert r.json()["status"] == "cooking"
@@ -104,12 +104,12 @@ def test_tc06b_all_items_done_order_stays_cooking(client, db):
     for item in items:
         r = client.patch(
             f"/api/v1/kitchen/items/{item['id']}/status",
-            json={"status": "cooking"},
+            headers=auth_header("kitchen"), json={"status": "cooking"},
         )
         assert r.status_code == 200
         r = client.patch(
             f"/api/v1/kitchen/items/{item['id']}/status",
-            json={"status": "done"},
+            headers=auth_header("kitchen"), json={"status": "done"},
         )
         assert r.status_code == 200
 
