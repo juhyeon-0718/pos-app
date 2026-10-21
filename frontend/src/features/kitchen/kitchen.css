@@ -1,16 +1,16 @@
-/* 주방 원거리 가독성: 큰 글씨, 고대비 */
+/* 주방 원거리 가독성: 큰 글씨, 고대비. 다크 팔레트·큰 글씨는 토큰 없음: U-04에서 확정 */
 
 .kitchen-page {
   max-width: 900px;
   margin: 0 auto;
-  padding: 16px;
-  background: #111;
-  color: #fff;
+  padding: var(--spacing-lg);
+  background: #111; /* 토큰 없음: U-04에서 확정 */
+  color: #fff; /* 토큰 없음: U-04에서 확정 */
   min-height: 100vh;
 }
 
 .kitchen-page h1 {
-  font-size: 28px;
+  font-size: 28px; /* 토큰 없음: U-04에서 확정 */
 }
 
 .kitchen-queue {
@@ -18,52 +18,52 @@
   padding: 0;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 16px;
+  gap: var(--gap-lg);
 }
 
 .kitchen-item {
-  border: 3px solid #555;
-  border-radius: 12px;
-  padding: 16px;
+  border: 3px solid #555; /* 토큰 없음: U-04에서 확정 */
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  background: #222;
+  gap: var(--gap-sm);
+  background: #222; /* 토큰 없음: U-04에서 확정 */
 }
 
 .kitchen-item--pending {
-  border-color: #ffb020;
+  border-color: #ffb020; /* 토큰 없음: U-04에서 확정 */
 }
 
 .kitchen-item--cooking {
-  border-color: #2b7fff;
+  border-color: #2b7fff; /* 토큰 없음: U-04에서 확정 */
 }
 
 .kitchen-item--done {
-  border-color: #2ecc71;
+  border-color: #2ecc71; /* 토큰 없음: U-04에서 확정 */
   opacity: 0.6;
 }
 
 .kitchen-item-main {
   display: flex;
   justify-content: space-between;
-  font-size: 24px;
-  font-weight: 700;
+  font-size: 24px; /* 토큰 없음: U-04에서 확정 */
+  font-weight: var(--font-weight-bold);
 }
 
 .kitchen-item-status {
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 20px; /* 토큰 없음: U-04에서 확정 */
+  font-weight: var(--font-weight-bold);
 }
 
 .kitchen-item-btn {
-  min-height: 56px;
-  font-size: 20px;
-  font-weight: 700;
+  min-height: 56px; /* 토큰 없음: U-04에서 확정 */
+  font-size: 20px; /* 토큰 없음: U-04에서 확정 */
+  font-weight: var(--font-weight-bold);
   border: none;
-  border-radius: 10px;
-  background: #ffb020;
-  color: #111;
+  border-radius: 10px; /* 토큰 없음: U-04에서 확정 */
+  background: #ffb020; /* 토큰 없음: U-04에서 확정 */
+  color: #111; /* 토큰 없음: U-04에서 확정 */
 }
 
 .kitchen-item-btn:disabled {
@@ -72,6 +72,6 @@
 
 .kitchen-error,
 .kitchen-role-error {
-  font-size: 20px;
-  color: #ff6b6b;
+  font-size: 20px; /* 토큰 없음: U-04에서 확정 */
+  color: #ff6b6b; /* 토큰 없음: U-04에서 확정 */
 }
