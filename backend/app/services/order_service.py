@@ -4,7 +4,7 @@
 """
 import hashlib
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import dataclass, field
 
 from sqlalchemy import select
@@ -182,6 +182,23 @@ def list_orders(
     if to is not None:
         stmt = stmt.where(Order.created_at < to)
     return list(db.execute(stmt.order_by(Order.created_at.desc(), Order.id.desc())).scalars().all())
+
+
+def list_table_orders(db: Session, table_id: str, *, session_issued_at: datetime) -> list[Order]:
+    """손님 세션(테이블)의 주문 조회 (B-18).
+
+    - 결제 완료(paid) 주문은 뺀다: 앞 손님의 주문이 다음 손님에게 보이지 않게 한다.
+    - 취소 주문은 세션 토큰 발급 시각 이후에 만들어진 것만 돌려준다.
+    """
+    orders = db.execute(select(Order).where(Order.table_id == table_id, Order.status != OrderStatus.paid.value)).scalars().all()
+    # 토큰 iat는 초 단위 내림이므로 같은 초에 생성된 주문은 포함한다.
+    cutoff = session_issued_at.replace(microsecond=0)
+
+    def _created_at_utc(order: Order) -> datetime:
+        created = order.created_at
+        return created if created.tzinfo else created.replace(tzinfo=timezone.utc)
+
+    return [o for o in orders if o.status != OrderStatus.cancelled.value or _created_at_utc(o) >= cutoff]
 
 
 def get_order(db: Session, order_id: str) -> Order:
