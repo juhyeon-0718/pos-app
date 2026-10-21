@@ -73,11 +73,21 @@
   --size-page-max: 1200px;
   --size-modal-max: 520px;
   --size-touch-lg: 56px;
-  --size-touch-kitchen: 88px;
+  --size-touch-kitchen: 56px;
   --size-phone-max: 480px;
-  --font-size-kitchen-meta: 32px;
-  --font-size-kitchen-body: 59px;
-  --font-size-kitchen-title: 72px;
+  --font-size-kitchen-meta: 16px;
+  --font-size-kitchen-body: 24px;
+  --font-size-kitchen-title: 36px;
+}
+
+/* 태블릿 이상: 같은 토큰 이름의 값만 바꾼다(DESIGN.md 반응형). 폭 기준은 768px 하나. */
+@media (min-width: 768px) {
+  :root {
+    --font-size-kitchen-meta: 20px;
+    --font-size-kitchen-body: 32px;
+    --font-size-kitchen-title: 48px;
+    --size-touch-kitchen: 72px;
+  }
 }
 
 * { box-sizing: border-box; }
