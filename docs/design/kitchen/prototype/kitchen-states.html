@@ -98,7 +98,7 @@ function lane(title, icon, list, kind, ctxFor) {
 function render() {
   const board = document.getElementById('board'), banner = document.getElementById('banner'), conn = document.getElementById('conn');
   banner.innerHTML = '';
-  conn.className = 'k-conn ok'; conn.setAttribute('role','status'); conn.innerHTML = ic('check')+'실시간 연결됨';
+  conn.className = 'k-conn ok'; conn.setAttribute('role','status'); conn.innerHTML = ic('check')+'연결됨';
   let html = '';
   const none = () => ({});
   if (state==='loading') {
