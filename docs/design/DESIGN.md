@@ -20,6 +20,7 @@
 ### 상태색 (Status)
 글자로 쓰는 쌍만 적는다. 상태는 항상 색 + 아이콘 + 텍스트를 함께 쓴다.
 - `--color-success`: #2e7d32 (성공·활성. 흰 배경 5.13:1)
+- `--color-success-hover`: #1b5e20 (success 버튼 hover. 흰 글자 7.87:1)
 - `--color-success-light`: #e8f5e9 (success 글자 4.56:1)
 - `--color-error`: #c62828 (오류·삭제. 흰 배경 5.62:1)
 - `--color-error-hover`: #b71c1c (danger 버튼 hover. 흰 글자 6.57:1)
@@ -49,6 +50,9 @@
 - `--font-size-xl`: 18px (모달 제목, 빈 상태 제목)
 - `--font-size-2xl`: 20px (섹션 제목)
 - `--font-size-3xl`: 24px (페이지 제목)
+- `--font-size-kitchen-meta`: 32px (주방 화면 경과 시간·보조 정보)
+- `--font-size-kitchen-body`: 59px (= 44pt. 주방 화면 메뉴명·수량, 2m 거리 기준)
+- `--font-size-kitchen-title`: 72px (주방 화면 테이블 번호)
 
 ### 줄높이 (Line Heights)
 - `--line-height-tight`: 1.2 (제목)
@@ -86,6 +90,9 @@
 - `--size-row-height`: 56px (표 행 최소 높이)
 - `--size-page-max`: 1200px (관리 화면 본문 최대 너비)
 - `--size-modal-max`: 520px (모달 최대 너비)
+- `--size-touch-lg`: 56px (손님·직원 화면의 주요 버튼 높이. 하단 고정 주문 버튼 등)
+- `--size-touch-kitchen`: 88px (주방 화면 버튼 높이. 장갑 낀 손, 2m 거리)
+- `--size-phone-max`: 480px (손님 화면 본문 최대 너비)
 
 ## 모서리 (Border Radius)
 
@@ -157,3 +164,4 @@
 - **접근성**: `alt="75MHz LIVE PUB"`. 장식으로만 쓰는 반복 배치는 `alt=""`.
 - **화면별**: 사장 상단 바는 축약형 56px(구분선 + 화면 이름 옆에 배치). 손님 화면 첫 화면은 축약형 80px 이상. 주방·직원 화면은 어두운 배경이면 흰색 축약형. 확정은 각 화면 명세에서 한다.
 - 축약형은 원본 로고를 재배치한 파생 파일이다. 정주현이 모양을 확인하기 전까지는 시안 상태다.
+- U-03: 화면 시안용 토큰 추가. `--size-touch-lg`, `--size-touch-kitchen`, `--size-phone-max`, `--font-size-kitchen-meta/body/title`. 기존 값은 바꾸지 않음.

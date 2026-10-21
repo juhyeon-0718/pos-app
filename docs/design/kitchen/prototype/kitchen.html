@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>주방 · U-03 시안 (메인 화면)</title>
+<link rel="stylesheet" href="kitchen.css">
+</head>
+<body>
+<header class="k-bar">
+  <img class="app-logo" src="../../brand/logo-compact-black.png" alt="75MHz LIVE PUB">
+  <h1 class="k-title">주방</h1>
+  <span class="k-spacer"></span>
+  <span class="k-conn ok" role="status"><i data-icon="check"></i>실시간 연결됨</span>
+  <span class="k-clock">18:42</span>
+</header>
+
+<main class="k-board">
+  <section class="k-lane" aria-labelledby="l-recv">
+    <h2 class="k-lane-head" id="l-recv"><i data-icon="inbox"></i>접수 <span class="k-count">3</span></h2>
+
+    <article class="k-card late" aria-label="3번 테이블 주문, 14분 경과">
+      <div class="k-side">
+        <div class="k-table">3<small>번 테이블</small></div>
+        <div>
+          <div class="k-elapsed"><i data-icon="clock"></i>14분</div>
+          <span class="k-late" style="margin-top:8px"><i data-icon="alert"></i>지연</span>
+        </div>
+      </div>
+      <div class="k-main">
+        <ul class="k-items">
+          <li><span class="k-name">김치찌개</span><span class="k-qty">×2</span></li>
+          <li><span class="k-name">공기밥</span><span class="k-qty">×2</span></li>
+        </ul>
+        <div class="k-act"><button class="btn btn-primary btn-kitchen"><i data-icon="flame"></i>조리 시작</button></div>
+      </div>
+    </article>
+
+    <article class="k-card" aria-label="7번 테이블 주문, 3분 경과">
+      <div class="k-side">
+        <div class="k-table">7<small>번 테이블</small></div>
+        <div class="k-elapsed"><i data-icon="clock"></i>3분</div>
+      </div>
+      <div class="k-main">
+        <ul class="k-items">
+          <li><span class="k-name">제육볶음</span><span class="k-qty">×1</span></li>
+          <li><span class="k-name">비빔밥</span><span class="k-qty">×1</span></li>
+          <li><span class="k-name">된장찌개</span><span class="k-qty">×1</span></li>
+        </ul>
+        <div class="k-act"><button class="btn btn-primary btn-kitchen"><i data-icon="flame"></i>조리 시작</button></div>
+      </div>
+    </article>
+
+    <article class="k-card" aria-label="12번 테이블 주문, 1분 경과">
+      <div class="k-side">
+        <div class="k-table">12<small>번 테이블</small></div>
+        <div class="k-elapsed"><i data-icon="clock"></i>1분</div>
+      </div>
+      <div class="k-main">
+        <ul class="k-items">
+          <li><span class="k-name">아주 긴 이름의 시즌 한정 메뉴 예시 (두 줄까지만 표시)</span><span class="k-qty">×1</span></li>
+        </ul>
+        <div class="k-act"><button class="btn btn-primary btn-kitchen"><i data-icon="flame"></i>조리 시작</button></div>
+      </div>
+    </article>
+  </section>
+
+  <section class="k-lane" aria-labelledby="l-cook">
+    <h2 class="k-lane-head" id="l-cook"><i data-icon="flame"></i>조리 중 <span class="k-count">2</span></h2>
+
+    <article class="k-card" aria-label="5번 테이블 주문, 조리 중">
+      <div class="k-side">
+        <div class="k-table">5<small>번 테이블</small></div>
+        <div class="k-elapsed"><i data-icon="clock"></i>8분</div>
+      </div>
+      <div class="k-main">
+        <ul class="k-items">
+          <li class="is-done"><span class="k-name">김치찌개</span><span class="k-done"><i data-icon="check"></i>완료</span><span class="k-qty">×1</span></li>
+          <li><span class="k-name">제육볶음</span><span class="k-qty">×2</span></li>
+        </ul>
+        <div class="k-act"><button class="btn btn-success btn-kitchen"><i data-icon="check"></i>조리 완료</button></div>
+      </div>
+    </article>
+
+    <article class="k-card" aria-label="9번 테이블 주문, 조리 중">
+      <div class="k-side">
+        <div class="k-table">9<small>번 테이블</small></div>
+        <div class="k-elapsed"><i data-icon="clock"></i>6분</div>
+      </div>
+      <div class="k-main">
+        <ul class="k-items">
+          <li><span class="k-name">비빔밥</span><span class="k-qty">×3</span></li>
+        </ul>
+        <div class="k-act"><button class="btn btn-success btn-kitchen"><i data-icon="check"></i>조리 완료</button></div>
+      </div>
+    </article>
+  </section>
+</main>
+<script src="../../components/prototype/ui.js"></script>
+</body>
+</html>

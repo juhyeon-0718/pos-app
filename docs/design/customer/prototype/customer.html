@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>손님 QR 주문 · U-03 시안 (메뉴 목록)</title>
+<link rel="stylesheet" href="customer.css">
+</head>
+<body>
+<div class="phone">
+  <header class="c-bar">
+    <div class="c-bar-top">
+      <img class="app-logo" src="../../brand/logo-compact-black.png" alt="75MHz LIVE PUB">
+      <span class="c-table"><i data-icon="hash"></i>3번 테이블</span>
+    </div>
+    <div class="c-tabs" role="tablist">
+      <button role="tab" aria-selected="true">메뉴</button>
+      <button role="tab" aria-selected="false">주문 내역</button>
+    </div>
+  </header>
+
+  <div class="c-chips" role="group" aria-label="카테고리">
+    <button aria-pressed="true">전체</button>
+    <button aria-pressed="false">찌개</button>
+    <button aria-pressed="false">볶음</button>
+    <button aria-pressed="false">밥</button>
+    <button aria-pressed="false">시즌</button>
+  </div>
+
+  <main class="c-main">
+    <h2 class="c-section">찌개</h2>
+    <div class="card menu-row">
+      <div class="menu-info"><div class="menu-name">김치찌개</div><div class="menu-price">9,000원</div></div>
+      <button class="btn btn-secondary menu-add"><i data-icon="plus"></i>담기</button>
+    </div>
+    <div class="card menu-row">
+      <div class="menu-info"><div class="menu-name">된장찌개</div><div class="menu-price">8,500원</div></div>
+      <div class="qty" role="group" aria-label="된장찌개 수량">
+        <button aria-label="된장찌개 하나 빼기"><i data-icon="minus"></i></button>
+        <output aria-live="polite">2</output>
+        <button aria-label="된장찌개 하나 더하기"><i data-icon="plus"></i></button>
+      </div>
+    </div>
+
+    <h2 class="c-section">볶음 · 밥</h2>
+    <div class="card menu-row">
+      <div class="menu-info"><div class="menu-name">제육볶음</div><div class="menu-price">11,000원</div></div>
+      <button class="btn btn-secondary menu-add"><i data-icon="plus"></i>담기</button>
+    </div>
+    <div class="card menu-row">
+      <div class="menu-info"><div class="menu-name">비빔밥</div><div class="menu-price">10,000원</div></div>
+      <div class="qty" role="group" aria-label="비빔밥 수량">
+        <button aria-label="비빔밥 하나 빼기"><i data-icon="minus"></i></button>
+        <output aria-live="polite">1</output>
+        <button aria-label="비빔밥 하나 더하기"><i data-icon="plus"></i></button>
+      </div>
+    </div>
+    <div class="card menu-row">
+      <div class="menu-info"><div class="menu-name">공기밥</div><div class="menu-price">1,000원</div></div>
+      <button class="btn btn-secondary menu-add"><i data-icon="plus"></i>담기</button>
+    </div>
+
+    <h2 class="c-section">시즌</h2>
+    <div class="card menu-row">
+      <div class="menu-info"><div class="menu-name">아주 긴 이름의 시즌 한정 메뉴 예시 (이름이 길면 두 줄까지만 표시)</div><div class="menu-price">15,000원</div></div>
+      <button class="btn btn-secondary menu-add"><i data-icon="plus"></i>담기</button>
+    </div>
+  </main>
+
+  <div class="dock">
+    <button class="btn btn-primary"><span style="display:inline-flex;align-items:center;gap:8px"><i data-icon="cart"></i>장바구니 보기 <span class="cnt">3</span></span><span>28,500원</span></button>
+  </div>
+</div>
+<script src="../../components/prototype/ui.js"></script>
+</body>
+</html>

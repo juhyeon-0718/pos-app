@@ -1,0 +1,33 @@
+/* U-03 직원 화면 시안. 태블릿 가로(1024px 기준) 빠른 처리: 버튼 56px, 카드 2열. */
+@import url("../../components/prototype/components.css");
+
+body { background: var(--color-bg-secondary); min-width: 768px; }
+.s-bar { display: flex; align-items: center; gap: var(--gap-lg); padding: 0 var(--spacing-xl); min-height: 72px; background: var(--color-bg-default); border-bottom: var(--border-thin) solid var(--color-border-default); }
+.s-bar .app-logo { height: 56px; }
+.s-title { font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); padding-left: var(--spacing-lg); border-left: var(--border-thin) solid var(--color-border-default); }
+.s-spacer { flex: 1; }
+.s-conn { display: inline-flex; align-items: center; gap: var(--gap-sm); color: var(--color-success); font-weight: var(--font-weight-semibold); }
+
+.s-page { padding: var(--spacing-lg) var(--spacing-xl) var(--spacing-xl); display: flex; flex-direction: column; gap: var(--gap-lg); }
+.s-tools { display: flex; align-items: center; justify-content: space-between; gap: var(--gap-lg); flex-wrap: wrap; }
+.s-chips { display: flex; gap: var(--gap-sm); flex-wrap: wrap; }
+.s-chips button { min-height: var(--size-touch-lg); padding: 0 var(--spacing-lg); display: inline-flex; align-items: center; gap: var(--gap-sm); font: inherit; font-size: var(--font-size-lg); background: var(--color-bg-default); color: var(--color-text-primary); border: var(--border-thin) solid var(--color-border-strong); border-radius: var(--radius-full); cursor: pointer; }
+.s-chips button[aria-pressed="true"] { background: var(--color-info-light); border: var(--border-default) solid var(--color-primary); color: var(--color-primary); font-weight: var(--font-weight-bold); }
+.s-chips .n { min-width: 28px; height: 28px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-full); background: var(--color-text-primary); color: var(--color-text-on-fill); font-size: var(--font-size-sm); font-weight: var(--font-weight-bold); font-variant-numeric: tabular-nums; }
+
+.s-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--gap-lg); }
+.s-card { display: flex; flex-direction: column; gap: var(--gap-md); padding: var(--spacing-lg); }
+.s-card.attn { border: var(--border-default) solid var(--color-primary); }
+.s-head { display: flex; align-items: center; justify-content: space-between; gap: var(--gap-md); }
+.s-table { font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); font-variant-numeric: tabular-nums; }
+.s-table small { font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); color: var(--color-text-secondary); margin-left: 2px; }
+.s-meta { display: flex; align-items: center; justify-content: space-between; color: var(--color-text-secondary); font-size: var(--font-size-sm); font-variant-numeric: tabular-nums; }
+.s-lines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--spacing-sm); font-size: var(--font-size-lg); }
+.s-lines li { display: flex; justify-content: space-between; gap: var(--gap-md); align-items: center; }
+.s-lines .nm { overflow-wrap: anywhere; font-weight: var(--font-weight-medium); }
+.s-lines .q { font-variant-numeric: tabular-nums; font-weight: var(--font-weight-bold); white-space: nowrap; }
+.s-lines .ok { color: var(--color-success); display: inline-flex; align-items: center; gap: var(--spacing-xs); font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); margin-right: var(--spacing-sm); }
+.s-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--gap-md); padding-top: var(--spacing-md); border-top: var(--border-thin) solid var(--color-border-light); }
+.s-total { font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); font-variant-numeric: tabular-nums; }
+.s-actions { display: flex; gap: var(--gap-sm); align-items: center; }
+.s-hint { color: var(--color-text-secondary); font-size: var(--font-size-sm); display: inline-flex; align-items: center; gap: var(--spacing-xs); }

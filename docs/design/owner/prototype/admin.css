@@ -11,6 +11,7 @@
   --color-border-default: #d0d0d0;
   --color-border-strong: #8a8a8a;
   --color-success: #2e7d32;
+  --color-success-hover: #1b5e20;
   --color-success-light: #e8f5e9;
   --color-error: #c62828;
   --color-error-hover: #b71c1c;
@@ -71,6 +72,12 @@
   --size-row-height: 56px;
   --size-page-max: 1200px;
   --size-modal-max: 520px;
+  --size-touch-lg: 56px;
+  --size-touch-kitchen: 88px;
+  --size-phone-max: 480px;
+  --font-size-kitchen-meta: 32px;
+  --font-size-kitchen-body: 59px;
+  --font-size-kitchen-title: 72px;
 }
 
 * { box-sizing: border-box; }
