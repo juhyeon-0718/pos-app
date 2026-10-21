@@ -47,6 +47,7 @@
     const link = (href, label, key) => h('a', { href, 'aria-current': current === key ? 'page' : null, text: label });
     return h('header', { class: 'app-bar' },
       h('div', { class: 'app-bar-inner' },
+        h('img', { class: 'app-logo', src: '../../brand/logo-compact-black.png', alt: '75MHz LIVE PUB' }),
         h('span', { class: 'app-title', text: '사장 관리' }),
         h('nav', { class: 'nav', 'aria-label': '관리 메뉴' },
           link('menus.html', '메뉴 관리', 'menus'),

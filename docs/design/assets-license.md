@@ -7,6 +7,7 @@
 | 폰트 | 시스템 폰트(San Francisco, Segoe UI, Roboto, Malgun Gothic) | 기기에 설치된 폰트만 호출. 파일을 저장소에 넣지 않음 | 각 OS 제공 | OS 기본 |
 | 폰트 | Noto Sans KR | `font-family` 대체 이름으로만 지정. 웹폰트 파일·CDN을 쓰지 않음 | SIL Open Font License 1.1 | Google Fonts / Noto Project |
 | 아이콘 | check, x, plus, ban, warn, info, spinner (7개) | 프로토타입 `admin.js`의 인라인 SVG 경로. 선 2px, 24px 격자. 디자이너(김지나)가 직접 그린 단순 도형이라 외부 아이콘 세트를 가져오지 않음 | 이 저장소 라이선스를 따름(제3자 저작물 없음) | 자체 제작 |
-| 이미지 | 없음 | 실매장 사진·손님 정보 없음. 프로토타입 데이터는 모두 더미 | - | - |
+| 로고 | 75MHz LIVE PUB 로고 (`brand/logo-*.png`, `logo-original.jpg`) | 매장 로고. 원본과 투명 배경·흰색·축약형 파생 파일 | 매장(정주현) 소유 상표성 자산. 정주현이 저장소 반영을 승인. 재사용 허가는 이 저장소 라이선스와 별개 | 정주현 제공 |
+| 이미지 | 로고 외 없음 | 실매장 사진·손님 정보 없음(로고만 승인됨). 프로토타입 데이터는 모두 더미 | - | - |
 
 구현(박지호) 시 아이콘 라이브러리를 도입하려면 MIT·ISC·Apache-2.0 등 라이선스를 확인하고 이 표에 추가한다. 유료 폰트·외부 에셋 도입은 정주현 확인 대상이다.

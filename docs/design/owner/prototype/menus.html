@@ -51,7 +51,7 @@ function render() {
 
   const count = (f) => MENUS.filter((m) => f === 'all' || (f === 'on' ? m.is_active : !m.is_active)).length;
   const seg = h('div', { class: 'seg', role: 'group', 'aria-label': '판매 상태 필터' },
-    ['all:전체', 'on:판매중', 'off:판매중지'].map((s) => {
+    ['all:전체', 'on:판매중', 'off:일시품절'].map((s) => {
       const [k, l] = s.split(':');
       return h('button', { type: 'button', 'aria-pressed': String(ui.filter === k), onclick: () => { ui.filter = k; render(); }, text: `${l} ${count(k)}` });
     }));
@@ -85,13 +85,14 @@ function menuTable() {
     h('td', { class: 'cell-name', title: m.name, text: m.name }),
     h('td', { class: m.category ? '' : 'muted', text: m.category || '미분류' }),
     h('td', { class: 'num', text: won(m.price) }),
-    h('td', null, activeBadge(m.is_active, '판매중', '판매중지')),
+    h('td', null, activeBadge(m.is_active, '판매중', '일시품절')),
     h('td', { class: 'cell-actions' },
       btn('수정', 'text', (e) => openForm('edit', m), { 'aria-label': `${m.name} 수정` }),
       h('a', { class: 'btn btn-text', href: `recipe.html?menu=${m.id}&name=${encodeURIComponent(m.name)}`, 'aria-label': `${m.name} 레시피` }, '레시피'),
       m.is_active
-        ? btn('삭제', 'text danger', () => openDelete(m), { 'aria-label': `${m.name} 삭제` })
-        : btn('다시 판매', 'text', () => reactivate(m), { 'aria-label': `${m.name} 다시 판매` }))));
+        ? btn('일시품절', 'text', () => setActive(m, false), { 'aria-label': `${m.name} 일시품절` })
+        : btn('판매 다시 시작', 'text', () => setActive(m, true), { 'aria-label': `${m.name} 판매 다시 시작` }),
+      btn('삭제', 'text danger', () => openDelete(m), { 'aria-label': `${m.name} 삭제` }))));
   const more = ui.hasMore ? h('div', { class: 'recipe-foot' },
     h('span', { class: 'muted', text: '50개씩 불러와요. 더 있어요.' }),
     ui.list === 'paging'
@@ -148,8 +149,8 @@ function formBody(m) {
     h('datalist', { id: 'cat-list' }, cats.map((c) => h('option', { value: c }))),
     h('div', { class: 'help', id: 'h-cat', text: '비워 두면 "미분류"로 보여요.' })));
   body.push(h('label', { class: 'check' },
-    h('input', { type: 'checkbox', checked: d.is_active, disabled: busy, onchange: (e) => { d.is_active = e.target.checked; } }),
-    h('span', null, '판매 중 ', h('span', { class: 'muted', text: '(손님 주문 화면에 표시)' }))));
+    h('input', { type: 'checkbox', checked: !d.is_active, disabled: busy, onchange: (e) => { d.is_active = !e.target.checked; } }),
+    h('span', null, '일시품절 ', h('span', { class: 'muted', text: '(체크하면 손님 메뉴판에서 숨겨요)' }))));
   return body;
 }
 
@@ -173,8 +174,8 @@ function drawModal() {
     const m2 = m, name = m2.item.name, busy = m2.status === 'deleting';
     const body = [];
     if (m2.status === 'failed') body.push(banner('error', '삭제하지 못했어요.', '잠시 후 다시 시도해 주세요.'));
-    body.push(h('p', null, h('span', { class: 'name-quote', text: `"${name}"` }), ' 메뉴를 삭제할까요?'));
-    body.push(h('p', { class: 'muted', text: '삭제하면 "판매중지"로 바뀌고 손님 주문 화면에서 사라져요. 지난 주문 기록은 그대로 남고, 언제든 "다시 판매"로 되돌릴 수 있어요.' }));
+    body.push(h('p', null, h('span', { class: 'name-quote', text: `"${name}"` }), '를 삭제할까요? 삭제하면 되돌릴 수 없어요.'));
+    body.push(h('p', { class: 'muted', text: '모든 목록에서 사라져요. 지난 주문과 매출 기록은 그대로 남아요.' }));
     openModal({
       title: '메뉴 삭제', alert: true, busy, onClose: cancelModal, body,
       footer: [
@@ -208,14 +209,14 @@ function openDelete(item) { ui.modal = { kind: 'delete', item, status: 'idle' };
 function confirmDelete() {
   const m = ui.modal; m.status = 'deleting'; drawModal();
   setTimeout(() => {
-    MENUS = MENUS.map((x) => (x.id === m.item.id ? { ...x, is_active: false } : x));   // DELETE = is_active=false (openapi deleteMenu)
+    MENUS = MENUS.filter((x) => x.id !== m.item.id);   // DELETE = 소프트 삭제(D-37): 모든 목록에서 제외
     ui.modal = null; closeModal(); render();
-    toast(`"${m.item.name}" 메뉴를 삭제했어요. (판매중지로 바뀌었어요)`);
+    toast(`"${m.item.name}" 메뉴를 삭제했어요.`);
   }, 600);
 }
-function reactivate(m) {
-  MENUS = MENUS.map((x) => (x.id === m.id ? { ...x, is_active: true } : x));
-  render(); toast(`"${m.name}" 메뉴를 다시 판매해요.`);
+function setActive(m, on) {
+  MENUS = MENUS.map((x) => (x.id === m.id ? { ...x, is_active: on } : x));
+  render(); toast(on ? `"${m.name}" 메뉴 판매를 다시 시작해요.` : `"${m.name}" 메뉴를 일시품절로 바꿨어요. 손님 메뉴판에서 숨겨져요.`);
 }
 
 /* ---------- 프로토타입 상태 전환 ---------- */
