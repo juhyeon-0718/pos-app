@@ -46,6 +46,13 @@ def list_tables(db: Session) -> list[Table]:
     return list(db.execute(select(Table).order_by(Table.table_no)).scalars().all())
 
 
+def get_table_numbers(db: Session, table_ids: list[str]) -> dict[str, int]:
+    if not table_ids:
+        return {}
+    rows = db.execute(select(Table.id, Table.table_no).where(Table.id.in_(table_ids))).all()
+    return {table_id: table_no for table_id, table_no in rows}
+
+
 def create_table(db: Session, *, table_no: int) -> Table:
     table = Table(table_no=table_no)
     db.add(table)

@@ -73,6 +73,11 @@ def list_tables(db: Session) -> list[Table]:
     return repository.list_tables(db)
 
 
+def table_numbers(db: Session, table_ids: list[str]) -> dict[str, int]:
+    """table_id -> table_no. 주문 응답에 현장에서 읽을 수 있는 테이블 번호를 채우는 데 쓴다(다른 모듈용 공개 함수)."""
+    return repository.get_table_numbers(db, list(set(table_ids)))
+
+
 def create_table(db: Session, *, table_no: int) -> Table:
     return repository.create_table(db, table_no=table_no)
 

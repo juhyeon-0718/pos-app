@@ -43,7 +43,7 @@ def _set_item_cooking(client, item_id: str) -> None:
     """kitchen 엔드포인트로 아이템 상태를 cooking으로 변경."""
     r = client.patch(
         f"/api/v1/kitchen/items/{item_id}/status",
-        json={"status": "cooking"},
+        headers=auth_header("kitchen"), json={"status": "cooking"},
     )
     assert r.status_code == 200, f"아이템 상태 변경 실패: {r.text}"
 
