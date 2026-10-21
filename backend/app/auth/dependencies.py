@@ -4,6 +4,9 @@
 import 한 줄로 최소화한다. 다른 모듈은 이 파일만 의존하고 app.auth.models/
 repository/service를 직접 import하지 않는다.
 """
+from dataclasses import dataclass
+from datetime import datetime, timezone
+
 import jwt
 from fastapi import Depends, Header, HTTPException
 from sqlalchemy.orm import Session
@@ -14,10 +17,23 @@ from app.db import get_db
 from app.models.enums import Role
 
 
+@dataclass(frozen=True)
+class TableSession:
+    table_id: str
+    issued_at: datetime  # 세션 토큰 발급 시각(iat, UTC)
+
+
 def get_table_id(
     x_table_session_token: str | None = Header(default=None, alias="X-Table-Session-Token"),
     db: Session = Depends(get_db),
 ) -> str:
+    return get_table_session(x_table_session_token, db).table_id
+
+
+def get_table_session(
+    x_table_session_token: str | None = Header(default=None, alias="X-Table-Session-Token"),
+    db: Session = Depends(get_db),
+) -> TableSession:
     if not x_table_session_token:
         raise HTTPException(status_code=401, detail="X-Table-Session-Token 헤더가 필요합니다")
     try:
@@ -32,7 +48,7 @@ def get_table_id(
     # QR 재발급 시 qr_token이 바뀌므로, 토큰이 가진 qr_token과 현재 값이 다르면 즉시 무효 (D-03).
     if table is None or table.qr_token != payload["qr_token"]:
         raise HTTPException(status_code=401, detail="테이블 세션이 더 이상 유효하지 않습니다(QR 재발급됨)") from None
-    return table_id
+    return TableSession(table_id=table_id, issued_at=datetime.fromtimestamp(payload["iat"], tz=timezone.utc))
 
 
 class CurrentUser:

@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.auth import service as auth_service
-from app.auth.dependencies import get_current_role, get_table_id
+from app.auth.dependencies import TableSession, get_current_role, get_table_id, get_table_session
 from app.db import get_db
 from app.models.enums import OrderStatus, Role
 from app.models.order import Order
@@ -105,9 +105,9 @@ def create_order(
 
 
 @router.get("/orders/mine", response_model=list[OrderOut])
-def my_orders(table_id: str = Depends(get_table_id), db: Session = Depends(get_db)):
-    orders = db.execute(select(Order).where(Order.table_id == table_id)).scalars().all()
-    return _out_many(db, list(orders))
+def my_orders(session: TableSession = Depends(get_table_session), db: Session = Depends(get_db)):
+    orders = order_service.list_table_orders(db, session.table_id, session_issued_at=session.issued_at)
+    return _out_many(db, orders)
 
 
 @router.get("/orders", response_model=OrderListOut)
