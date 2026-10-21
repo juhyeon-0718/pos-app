@@ -5,15 +5,15 @@ export type ItemStatus = "pending" | "cooking" | "done";
 
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   received: "접수",
-  cooking: "조리중",
-  served: "서빙완료",
-  paid: "결제완료",
-  cancelled: "취소됨",
+  cooking: "조리 중",
+  served: "서빙 완료",
+  paid: "결제 완료", // U-03 명세 표기(D-33)
+  cancelled: "취소",
 };
 
 export const ITEM_STATUS_LABEL: Record<ItemStatus, string> = {
   pending: "대기",
-  cooking: "조리중",
+  cooking: "조리 중",
   done: "완료",
 };
 
