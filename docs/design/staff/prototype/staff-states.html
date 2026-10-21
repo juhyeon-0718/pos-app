@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>직원 상태별 시안 · U-05</title>
+<link rel="stylesheet" href="staff.css">
+<style>
+  .proto-bar { position: sticky; top: 0; z-index: 300; background: var(--color-bg-default); border-bottom: var(--border-thin) dashed var(--color-border-strong); padding: var(--spacing-sm) var(--spacing-xl); display: flex; flex-wrap: wrap; gap: var(--gap-sm); align-items: center; }
+  .proto-bar b { font-size: var(--font-size-sm); color: var(--color-text-secondary); margin-right: var(--spacing-sm); }
+  .proto-bar button { min-height: var(--size-touch-min); padding: 0 var(--spacing-md); font: inherit; font-size: var(--font-size-sm); background: var(--color-bg-default); border: var(--border-thin) solid var(--color-border-strong); border-radius: var(--radius-full); cursor: pointer; }
+  .proto-bar button[aria-pressed="true"] { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-text-on-fill); }
+  .overlay { padding-top: 140px; align-items: flex-start; }
+  .s-full { grid-column: 1 / -1; }
+  .s-state { display: flex; flex-direction: column; align-items: center; gap: var(--gap-md); padding: 80px var(--spacing-xl); text-align: center; }
+  .s-state .icon { width: 56px; height: 56px; color: var(--color-text-secondary); }
+  .s-state h2 { font-size: var(--font-size-2xl); }
+  .s-state p { color: var(--color-text-secondary); max-width: 420px; line-height: var(--line-height-relaxed); }
+  .s-skel { height: 220px; border-radius: var(--radius-md); background: var(--color-border-light); animation: pulse 1.4s ease-in-out infinite; }
+  .s-card .banner { padding: var(--spacing-sm) var(--spacing-md); }
+  .s-stamp { color: var(--color-text-secondary); font-size: var(--font-size-sm); display: inline-flex; align-items: center; gap: var(--spacing-xs); }
+  .s-lock { color: var(--color-text-secondary); font-size: var(--font-size-sm); display: inline-flex; align-items: center; gap: var(--spacing-xs); max-width: 260px; text-align: right; }
+  .modal-lg-btns .btn { min-height: var(--size-touch-lg); font-size: var(--font-size-lg); }
+  .tbl-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--gap-sm); margin-bottom: var(--spacing-lg); }
+  .tbl-grid button { min-height: var(--size-touch-lg); font: inherit; font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); background: var(--color-bg-default); border: var(--border-thin) solid var(--color-border-strong); border-radius: var(--radius-md); cursor: pointer; }
+  .tbl-grid button[aria-pressed="true"] { background: var(--color-info-light); border: var(--border-default) solid var(--color-primary); color: var(--color-primary); }
+  .proxy-row { display: flex; align-items: center; justify-content: space-between; gap: var(--gap-md); min-height: 64px; border-bottom: var(--border-thin) solid var(--color-border-light); font-size: var(--font-size-lg); }
+  .proxy-row .qty { display: inline-flex; align-items: center; gap: var(--spacing-xs); }
+  .proxy-row .qty button { width: var(--size-touch-lg); height: var(--size-touch-lg); font: inherit; font-size: var(--font-size-xl); background: var(--color-bg-default); border: var(--border-thin) solid var(--color-border-strong); border-radius: var(--radius-md); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: var(--color-primary); }
+  .proxy-row .qty output { min-width: 36px; text-align: center; font-weight: var(--font-weight-bold); font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div class="proto-bar" id="bar"></div>
+<header class="s-bar">
+  <img class="app-logo" src="../../brand/logo-compact-black.png" alt="75MHz LIVE PUB">
+  <h1 class="s-title">직원</h1>
+  <span class="s-spacer"></span>
+  <span id="conn"></span>
+  <button class="btn btn-primary btn-lg" id="proxyBtn"><i data-icon="plus"></i>대리 주문</button>
+</header>
+<div id="top"></div>
+<main class="s-page"><div class="s-tools" id="tools"></div><div class="s-grid" id="grid"></div></main>
+<div id="modal"></div>
+<script src="../../components/prototype/ui.js"></script>
+<script>
+/* 데이터 필드: openapi Order(table_no, status, total_amount, created_at, items[menu_name, qty, item_status], stock_warnings[name]). 값은 모두 더미. */
+const STATES = [
+  ['default','기본'],['loading','로딩'],['empty','빈 상태'],['error','불러오기 오류'],['offline','연결 끊김'],
+  ['busy','처리 중'],['conflict','409 서빙 불가'],['stock','재고 부족 경고'],
+  ['cancel','취소 확인'],['cancel-locked','취소 403'],['pay','결제 확인'],['proxy','대리 주문'],['proxy-409','대리 주문 품절']
+];
+let state = new URLSearchParams(location.search).get('state') || 'default';
+const ic = n => '<i data-icon="'+n+'"></i>';
+const esc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const won = n => n.toLocaleString('ko-KR')+'원';
+const BADGE = {
+  received:['badge-received','inbox','접수'], cooking:['badge-cooking','flame','조리 중'],
+  served:['badge-served','check','서빙 완료'], paid:['badge-paid','receipt','결제 완료']
+};
+const ORD = [
+  { t:5, st:'cooking', time:'18:31', min:11, total:34000, items:[['김치찌개',1,'done'],['제육볶음',2,'done']] },
+  { t:9, st:'cooking', time:'18:36', min:6, total:30000, items:[['비빔밥',3,'cooking']] },
+  { t:12, st:'received', time:'18:41', min:1, total:17000, items:[['아주 긴 이름의 시즌 한정 메뉴 예시 (이름이 길면 줄바꿈)',1,'pending'],['공기밥',2,'pending']] },
+  { t:2, st:'served', time:'18:12', min:30, total:19000, items:[['된장찌개',2,'done'],['공기밥',2,'done']] }
+];
+function lines(o){ return '<ul class="s-lines">'+o.items.map(i=>'<li><span class="nm">'+esc(i[0])+'</span><span>'+(i[2]==='done'&&o.st==='cooking'?'<span class="ok">'+ic('check')+'조리 끝</span>':'')+'<span class="q">×'+i[1]+'</span></span></li>').join('')+'</ul>'; }
+function action(o){
+  const allDone = o.items.every(i=>i[2]==='done');
+  const dis = state==='offline';
+  if (o.st==='received') return '<button class="btn btn-text danger btn-lg"'+(dis?' disabled':'')+'>'+ic('x')+'주문 취소</button>';
+  if (o.st==='cooking') {
+    const busy = state==='busy' && o.t===5;
+    if (busy) return '<button class="btn btn-success btn-lg" disabled aria-busy="true">'+ic('spinner')+'처리 중</button>';
+    if (!allDone || dis) return '<span class="s-hint">'+ic('info')+(dis?'연결이 복구되면 누를 수 있습니다':'조리가 끝나면 누를 수 있습니다')+'</span><button class="btn btn-success btn-lg" disabled>'+ic('dish')+'서빙 완료</button>';
+    return '<button class="btn btn-success btn-lg">'+ic('dish')+'서빙 완료</button>';
+  }
+  if (o.st==='served') return '<button class="btn btn-primary btn-lg"'+(dis?' disabled':'')+'>'+ic('receipt')+'결제 완료</button>';
+  return '';
+}
+function card(o){
+  const b = BADGE[o.st];
+  const attn = (o.st==='served') || (o.st==='cooking' && o.items.every(i=>i[2]==='done') && state!=='offline');
+  let extra = '';
+  if (state==='stock' && o.t===12) extra = '<div class="banner banner-warning" role="status">'+ic('alert')+'<div class="banner-body">재고가 부족한 재료가 있습니다: 김치, 쌀. 주문은 접수됐습니다. 사장님께 알려 주세요.</div></div>';
+  if (state==='conflict' && o.t===5) extra = '<div class="banner banner-error" role="alert">'+ic('alert')+'<div class="banner-body"><div class="banner-title">아직 서빙 완료로 바꿀 수 없습니다</div>조리가 끝나지 않은 항목이 있습니다. 화면을 새로 불러왔습니다.</div></div>';
+  if (state==='cancel-locked' && o.t===12) extra = '<div class="banner banner-error" role="alert">'+ic('alert')+'<div class="banner-body"><div class="banner-title">취소하지 못했습니다</div>그 사이 조리가 시작되어 사장님만 취소할 수 있습니다. 화면을 새로 불러왔습니다.</div></div>';
+  return '<article class="card s-card'+(attn?' attn':'')+'" aria-label="'+o.t+'번 테이블, '+b[2]+'"><div class="s-head"><div class="s-table">'+o.t+'<small>번 테이블</small></div><span class="badge badge-lg '+b[0]+'">'+ic(b[1])+b[2]+'</span></div>'+
+    lines(o)+extra+'<div class="s-meta"><span>'+o.time+' 접수 · '+o.min+'분 경과</span></div><div class="s-foot"><span class="s-total">'+won(o.total)+'</span><div class="s-actions">'+action(o)+'</div></div></article>';
+}
+function modal(){
+  if (state==='cancel') return '<div class="overlay" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="modal"><div class="modal-title" id="mt">12번 테이블 주문을 취소할까요?</div><div class="modal-body">접수된 주문 17,000원이 취소됩니다.<br>취소한 주문은 되돌릴 수 없습니다.</div><div class="modal-footer modal-lg-btns"><button class="btn btn-secondary">돌아가기</button><button class="btn btn-danger">'+ic('x')+'주문 취소</button></div></div></div>';
+  if (state==='pay') return '<div class="overlay" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="modal"><div class="modal-title" id="mt">2번 테이블 결제를 완료할까요?</div><div class="modal-body">합계 <strong>19,000원</strong>을 받으셨는지 확인해 주세요.<br>결제 완료 후에는 상태를 바꿀 수 없습니다.</div><div class="modal-footer modal-lg-btns"><button class="btn btn-secondary">돌아가기</button><button class="btn btn-primary">'+ic('receipt')+'결제 완료</button></div></div></div>';
+  if (state==='proxy'||state==='proxy-409') return '<div class="overlay" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="modal" style="max-width:640px"><div class="modal-title" id="mt">대리 주문</div>'+(state==='proxy-409'?'<div class="banner banner-error" role="alert" style="margin-bottom:16px">'+ic('alert')+'<div class="banner-body"><div class="banner-title">제육볶음은 방금 품절되어 주문할 수 없습니다</div>메뉴를 새로 불러왔습니다. 나머지 메뉴로 다시 넣어 주세요.</div></div>':'')+'<div class="field-label" style="margin-bottom:8px">테이블</div><div class="tbl-grid">'+[1,2,3,4,5,6,7,8,9,10,11,12].map(n=>'<button aria-pressed="'+(n===7)+'">'+n+'</button>').join('')+'</div>'+
+    '<div class="field-label">메뉴</div>'+[['김치찌개',9000,2],...(state==='proxy-409'?[]:[['제육볶음',11000,0]]),['공기밥',1000,2]].map(m=>'<div class="proxy-row"><span>'+m[0]+' <span class="muted">'+won(m[1])+'</span></span><span class="qty"><button aria-label="'+m[0]+' 빼기">'+ic('minus')+'</button><output>'+m[2]+'</output><button aria-label="'+m[0]+' 더하기">'+ic('plus')+'</button></span></div>').join('')+
+    '<div class="total-row" style="padding:var(--spacing-lg) 0 0;font-size:var(--font-size-xl);display:flex;justify-content:space-between;font-weight:700"><span>합계</span><span>20,000원</span></div><div class="modal-footer modal-lg-btns" style="margin-top:var(--spacing-lg)"><button class="btn btn-secondary">닫기</button><button class="btn btn-primary">'+ic('check')+'7번 테이블 주문 넣기</button></div></div></div>';
+  return '';
+}
+function render(){
+  const conn = document.getElementById('conn'), top = document.getElementById('top'), tools = document.getElementById('tools'), grid = document.getElementById('grid');
+  conn.className='s-conn'; conn.setAttribute('role','status'); conn.innerHTML = ic('check')+'연결됨';
+  top.innerHTML = ''; document.getElementById('proxyBtn').disabled = (state==='offline'||state==='loading'||state==='error');
+  const chips = '<div class="s-chips" role="group" aria-label="주문 상태 필터"><button aria-pressed="true">전체 <span class="n">'+(state==='empty'?0:4)+'</span></button><button aria-pressed="false">'+ic('inbox')+'접수 <span class="n">1</span></button><button aria-pressed="false">'+ic('flame')+'조리 중 <span class="n">2</span></button><button aria-pressed="false">'+ic('check')+'서빙 완료 <span class="n">1</span></button></div>';
+  tools.innerHTML = chips+'<span class="s-stamp">'+ic('clock')+'18:42 갱신 · 5초마다 자동</span>';
+  let html='';
+  if (state==='loading') {
+    conn.className='s-conn'; conn.style.color='var(--color-text-secondary)'; conn.innerHTML = ic('spinner')+'연결 중';
+    html = '<div class="s-full loading-note" role="status" aria-busy="true">'+ic('spinner')+'주문을 불러오는 중</div><span class="s-skel"></span><span class="s-skel"></span><span class="s-skel"></span><span class="s-skel"></span>';
+  } else if (state==='empty') {
+    html = '<div class="card s-full s-state">'+ic('inbox')+'<h2>처리할 주문이 없습니다</h2><p>새 주문이 들어오면 이 화면에 나타납니다. 직접 넣을 주문은 오른쪽 위 "대리 주문"으로 넣을 수 있습니다.</p></div>';
+  } else if (state==='error') {
+    conn.style.color='var(--color-error)'; conn.innerHTML = ic('alert')+'연결 안 됨';
+    html = '<div class="card s-full s-state">'+ic('alert')+'<h2>주문을 불러오지 못했습니다</h2><p>네트워크를 확인하고 다시 시도해 주세요.</p><button class="btn btn-primary btn-lg">'+ic('refresh')+'다시 시도</button></div>';
+  } else {
+    if (state==='offline') {
+      conn.style.color='var(--color-warning-text)'; conn.innerHTML = ic('alert')+'연결 끊김';
+      top.innerHTML = '<div class="banner banner-warning" role="alert" style="margin:var(--spacing-lg) var(--spacing-xl) 0">'+ic('alert')+'<div class="banner-body"><div class="banner-title" style="font-weight:600">연결이 끊겼습니다. 다시 연결하는 중입니다.</div>아래 주문은 18:41 기준이며 새 주문이 보이지 않을 수 있습니다. 처리 버튼은 연결될 때까지 쓸 수 없습니다.</div><button class="btn btn-secondary">'+ic('refresh')+'지금 다시 연결</button></div>';
+      tools.querySelector('.s-stamp').innerHTML = ic('clock')+'18:41 기준';
+    }
+    html = ORD.map(card).join('');
+  }
+  grid.innerHTML = html; document.getElementById('modal').innerHTML = modal();
+  UI.run();
+  if (state==='offline') document.querySelectorAll('.s-card button').forEach(b=>b.disabled=true);
+  document.querySelectorAll('#bar button').forEach(b => b.setAttribute('aria-pressed', b.dataset.k===state));
+}
+document.getElementById('bar').innerHTML = '<b>상태 보기</b>'+STATES.map(s=>'<button data-k="'+s[0]+'" aria-pressed="false">'+s[1]+'</button>').join('');
+document.getElementById('bar').addEventListener('click', e => { const k=e.target.dataset&&e.target.dataset.k; if(k){ state=k; history.replaceState(null,'','?state='+k); render(); }});
+render();
+</script>
+</body>
+</html>
