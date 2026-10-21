@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>주방 상태별 시안 · U-04</title>
+<link rel="stylesheet" href="kitchen.css">
+<style>
+  .proto-bar { position: sticky; top: 0; z-index: 150; background: var(--color-bg-default); border-bottom: var(--border-thin) dashed var(--color-border-strong); padding: var(--spacing-sm) var(--spacing-xl); display: flex; flex-wrap: wrap; gap: var(--gap-sm); align-items: center; }
+  .proto-bar b { font-size: var(--font-size-sm); color: var(--color-text-secondary); margin-right: var(--spacing-sm); }
+  .proto-bar button { min-height: var(--size-touch-min); padding: 0 var(--spacing-md); font: inherit; font-size: var(--font-size-sm); background: var(--color-bg-default); border: var(--border-thin) solid var(--color-border-strong); border-radius: var(--radius-full); cursor: pointer; }
+  .proto-bar button[aria-pressed="true"] { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-text-on-fill); }
+  .k-banner { margin: var(--spacing-xl) var(--spacing-xl) 0; font-size: var(--font-size-2xl); padding: var(--spacing-lg) var(--spacing-xl); }
+  .k-banner .icon { width: 36px; height: 36px; }
+  .k-banner .btn { min-height: var(--size-touch-kitchen); font-size: var(--font-size-2xl); }
+  .k-full { grid-column: 1 / -1; }
+  .k-state { display: flex; flex-direction: column; align-items: center; gap: var(--gap-lg); padding: 120px var(--spacing-xl); text-align: center; }
+  .k-state .icon { width: 96px; height: 96px; color: var(--color-text-secondary); }
+  .k-state .btn .icon { width: 40px; height: 40px; color: inherit; }
+  .k-state h2 { font-size: 48px; font-weight: var(--font-weight-bold); }
+  .k-state p { font-size: var(--font-size-kitchen-meta); color: var(--color-text-secondary); }
+  .k-skel { height: 220px; border-radius: var(--radius-md); background: var(--color-border-light); animation: pulse 1.4s ease-in-out infinite; }
+  .k-items li.row { padding: 0; }
+  .k-row-act { display: flex; align-items: center; gap: var(--gap-md); }
+  .k-row-act .btn { min-height: var(--size-touch-kitchen); min-width: 176px; padding: 0 var(--spacing-md); font-size: 32px; font-weight: var(--font-weight-bold); gap: var(--gap-sm); }
+  .k-row-act .btn .icon { width: 36px; height: 36px; }
+  .k-err { white-space: nowrap; display: inline-flex; align-items: center; gap: var(--gap-sm); color: var(--color-error); font-size: var(--font-size-kitchen-meta); font-weight: var(--font-weight-bold); }
+  .k-err .icon { width: 36px; height: 36px; }
+  .k-cooking { display: inline-flex; align-items: center; gap: var(--gap-sm); color: var(--color-warning-text); font-size: var(--font-size-kitchen-meta); font-weight: var(--font-weight-semibold); white-space: nowrap; }
+  .k-cooking .icon { width: 32px; height: 32px; }
+  .k-act { display: flex; gap: var(--gap-md); }
+  .k-act .btn-kitchen { flex: 1; }
+  .k-card.stale { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="proto-bar" id="bar"></div>
+<header class="k-bar">
+  <img class="app-logo" src="../../brand/logo-compact-black.png" alt="75MHz LIVE PUB">
+  <h1 class="k-title">주방</h1>
+  <span class="k-spacer"></span>
+  <span id="conn"></span>
+  <span class="k-clock">18:42</span>
+</header>
+<div id="banner"></div>
+<main class="k-board" id="board"></main>
+<script src="../../components/prototype/ui.js"></script>
+<script>
+/* 데이터 필드는 openapi Order / OrderItem 그대로: table_no, created_at, items[menu_name, qty, item_status]. 값은 모두 더미. */
+const STATES = [
+  ['default','기본'],['loading','로딩'],['empty','빈 상태'],['error','불러오기 오류'],
+  ['offline','연결 끊김'],['busy','처리 중'],['partial','일부 항목 실패']
+];
+const ORDERS = {
+  recv: [
+    { table: 3, min: 14, items: [['김치찌개',2,'pending'],['공기밥',2,'pending']] },
+    { table: 7, min: 3, items: [['제육볶음',1,'pending'],['비빔밥',1,'pending'],['된장찌개',1,'pending']] }
+  ],
+  cook: [
+    { table: 5, min: 8, items: [['김치찌개',1,'done'],['제육볶음',2,'cooking']] },
+    { table: 9, min: 6, items: [['비빔밥',3,'cooking']] }
+  ]
+};
+const LATE_MIN = 10; /* 제안값. 정주현 님 확인 대기 */
+let state = (new URLSearchParams(location.search).get('state')) || 'default';
+const h = (s) => s;
+
+function ic(n){ return '<i data-icon="'+n+'"></i>'; }
+function esc(t){ return String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function itemRow(it, ctx) {
+  const [name, qty, st] = it;
+  let right = '';
+  if (st === 'done') right = '<span class="k-done">'+ic('check')+'완료</span>';
+  else if (ctx.busy && ctx.busy.includes(name)) right = '<button class="btn btn-secondary" disabled aria-busy="true">'+ic('spinner')+'처리 중</button>';
+  else if (ctx.fail && ctx.fail === name) right = '<button class="btn btn-danger" aria-label="'+esc(name)+' 처리 실패, 다시 시도">'+ic('alert')+'다시 시도</button>';
+  else if (st === 'pending') right = '<button class="btn btn-primary">'+ic('flame')+'시작</button>';
+  else right = '<button class="btn btn-success">'+ic('check')+'완료</button>';
+  return '<li class="'+(st==='done'?'is-done':'')+'"><span class="k-name">'+esc(name)+'</span><span class="k-qty">×'+qty+'</span><span class="k-row-act">'+right+'</span></li>';
+}
+function card(o, kind, ctx) {
+  ctx = ctx || {};
+  const late = o.min >= LATE_MIN && (state==='late' || o.min>=LATE_MIN);
+  const pend = o.items.filter(i=>i[2]==='pending').length;
+  const cook = o.items.filter(i=>i[2]==='cooking').length;
+  let bulk = '';
+  if (kind==='recv' && pend>=2) bulk = '<div class="k-act"><button class="btn btn-secondary btn-kitchen"'+(ctx.busyAll?' disabled':'')+'>'+ic('flame')+'전부 시작</button></div>';
+  if (kind==='cook' && cook>=2) bulk = '<div class="k-act"><button class="btn btn-secondary btn-kitchen">'+ic('check')+'전부 완료</button></div>';
+  return '<article class="k-card'+(late?' late':'')+(ctx.stale?' stale':'')+'" aria-label="'+o.table+'번 테이블, '+o.min+'분 경과">'+
+    '<div class="k-side"><div class="k-table">'+o.table+'<small>번 테이블</small></div><div><div class="k-elapsed">'+ic('clock')+o.min+'분</div>'+
+    (late?'<span class="k-late" style="margin-top:8px">'+ic('alert')+'지연</span>':'')+'</div></div>'+
+    '<div class="k-main"><ul class="k-items">'+o.items.map(i=>itemRow(i,ctx)).join('')+'</ul>'+bulk+'</div></article>';
+}
+function lane(title, icon, list, kind, ctxFor) {
+  return '<section class="k-lane"><h2 class="k-lane-head">'+ic(icon)+title+' <span class="k-count">'+list.length+'</span></h2>'+
+    (list.length ? list.map((o,i)=>card(o,kind,ctxFor(o,i))).join('') : '<div class="card k-state" style="padding:48px"><h2 style="font-size:36px">'+(kind==='recv'?'접수된 주문이 없습니다':'조리 중인 주문이 없습니다')+'</h2></div>')+'</section>';
+}
+function render() {
+  const board = document.getElementById('board'), banner = document.getElementById('banner'), conn = document.getElementById('conn');
+  banner.innerHTML = '';
+  conn.className = 'k-conn ok'; conn.setAttribute('role','status'); conn.innerHTML = ic('check')+'연결됨';
+  let html = '';
+  const none = () => ({});
+  if (state==='loading') {
+    html = '<div class="k-full" role="status" aria-busy="true"><div class="loading-note" style="font-size:var(--font-size-kitchen-meta);border:0">'+ic('spinner')+'주문을 불러오는 중</div></div>'+
+      '<div class="k-lane"><span class="k-skel"></span><span class="k-skel"></span></div><div class="k-lane"><span class="k-skel"></span></div>';
+    conn.className='k-conn'; conn.innerHTML = ic('spinner')+'연결 중';
+  } else if (state==='empty') {
+    html = '<div class="k-full k-state">'+ic('utensils')+'<h2>지금 들어온 주문이 없습니다</h2><p>새 주문이 들어오면 이 화면에 바로 나타납니다.</p></div>';
+  } else if (state==='error') {
+    html = '<div class="k-full k-state">'+ic('alert')+'<h2>주문을 불러오지 못했습니다</h2><p>네트워크를 확인하고 다시 시도해 주세요.</p><button class="btn btn-primary btn-kitchen" style="width:auto;padding:0 64px">'+ic('refresh')+'다시 시도</button></div>';
+    conn.className='k-conn'; conn.innerHTML = '<span style="color:var(--color-error);display:inline-flex;align-items:center;gap:8px">'+ic('alert')+'연결 안 됨</span>';
+  } else {
+    let ctx = none, banr = '';
+    if (state==='offline') {
+      conn.className='k-conn'; conn.innerHTML = '<span style="color:var(--color-warning-text);display:inline-flex;align-items:center;gap:8px">'+ic('alert')+'연결 끊김</span>';
+      banr = '<div class="banner banner-warning k-banner" role="alert">'+ic('alert')+'<div class="banner-body"><div class="banner-title" style="font-weight:700">연결이 끊겼습니다. 다시 연결하는 중입니다.</div>아래 주문은 18:41 기준이며 새 주문이 보이지 않을 수 있습니다. 버튼은 연결될 때까지 쓸 수 없습니다.</div><button class="btn btn-secondary">'+ic('refresh')+'지금 다시 연결</button></div>';
+      ctx = () => ({stale:true});
+    }
+    if (state==='busy') ctx = (o) => o.table===7 ? {busyAll:true, busy:['제육볶음','비빔밥','된장찌개']} : (o.table===5 ? {busy:['제육볶음']} : {});
+    if (state==='partial') {
+      banr = '<div class="banner banner-error k-banner" role="alert">'+ic('alert')+'<div class="banner-body"><div class="banner-title" style="font-weight:700">7번 테이블: 3개 중 1개를 처리하지 못했습니다</div>제육볶음만 다시 시도해 주세요. 나머지 2개는 처리됐습니다.</div></div>';
+      ctx = (o) => o.table===7 ? {fail:'제육볶음'} : {};
+    }
+    banner.innerHTML = banr;
+    let recv = ORDERS.recv.map(o=>({...o, items:o.items.map(i=>i.slice())})), cook = ORDERS.cook;
+    if (state==='partial') { recv[1].items[1][2]='cooking'; recv[1].items[2][2]='cooking'; }
+    html = lane('접수','inbox',recv,'recv',ctx) + lane('조리 중','flame',cook,'cook',ctx);
+  }
+  board.innerHTML = html;
+  UI.run();
+  if (state==='offline') document.querySelectorAll('.k-card button').forEach(b => b.disabled = true);
+  document.querySelectorAll('#bar button').forEach(b => b.setAttribute('aria-pressed', b.dataset.k===state));
+}
+document.getElementById('bar').innerHTML = '<b>상태 보기</b>' + STATES.map(s=>'<button data-k="'+s[0]+'" aria-pressed="false">'+s[1]+'</button>').join('');
+document.getElementById('bar').addEventListener('click', e => { const k = e.target.dataset && e.target.dataset.k; if (k) { state = k; history.replaceState(null,'','?state='+k); render(); } });
+render();
+</script>
+</body>
+</html>
