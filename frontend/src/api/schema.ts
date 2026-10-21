@@ -118,7 +118,11 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** 메뉴 삭제 (사장). 실제로는 is_active=false로 비활성화한다. */
+        /**
+         * 메뉴 삭제 (사장, D-37). 소프트 삭제: `deleted_at`만 기록하고 `is_active`는 바꾸지 않는다.
+         *     삭제된 메뉴는 목록·수정·레시피에서 사라지고(404) 되돌릴 수 없다. 과거 주문의 메뉴 참조와 스냅샷은 유지된다.
+         *     일시품절은 삭제가 아니라 PATCH로 `is_active=false`를 보낸다.
+         */
         delete: operations["deleteMenu"];
         options?: never;
         head?: never;
@@ -566,6 +570,8 @@ export interface components {
             price_snapshot?: number;
             /** @enum {string} */
             item_status?: "pending" | "cooking" | "done";
+            /** @description 이 항목이 속한 주문의 테이블 번호(현장에서 읽는 번호). table_id는 내부 식별자라 화면에 보이지 않는다. */
+            table_no?: number;
         };
         OrderItemInput: {
             menu_id: string;
@@ -582,6 +588,8 @@ export interface components {
         Order: {
             id?: string;
             table_id?: string;
+            /** @description 테이블 번호(현장에서 읽는 번호). 화면에는 table_id 대신 이 값을 보여 준다. */
+            table_no?: number;
             status?: components["schemas"]["OrderStatus"];
             total_amount?: number;
             /** Format: date-time */
@@ -997,7 +1005,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description 비활성화됨 */
+            /** @description 삭제됨 */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -1006,6 +1014,15 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            /** @description 메뉴가 없거나 이미 삭제됨 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
         };
     };
     updateMenu: {
@@ -1157,6 +1174,24 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            /**
+             * @description 주문에 일시품절(`is_active=false`)이거나 삭제된 메뉴가 있음 (D-37). 주문은 하나도 만들어지지 않는다.
+             *     같은 Idempotency-Key로 이미 만들어진 주문을 다시 요청하면 메뉴 상태와 상관없이 기존 주문을 반환한다.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "MENU_UNAVAILABLE",
+                     *       "detail": "품절되었거나 삭제된 메뉴가 있어 주문할 수 없습니다: 김치찌개"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description 같은 Idempotency-Key로 본문이 다른 요청이 재전송됨, 또는 직원 대리 주문에 table_id가 없음 */
             422: {
                 headers: {
@@ -1254,7 +1289,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description 허용되지 않는 상태 전이 */
+            /** @description 허용되지 않는 상태 전이. `served`로 바꿀 때 모든 항목이 `done`이 아니면 409, code=`ORDER_ITEMS_NOT_DONE` (D-32) */
             409: {
                 headers: {
                     [name: string]: unknown;

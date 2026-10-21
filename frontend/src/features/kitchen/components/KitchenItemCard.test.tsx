@@ -36,6 +36,25 @@ function baseItem(overrides: Partial<OrderItem> = {}): OrderItem {
   };
 }
 
+describe("KitchenItemCard 테이블 번호 표시 (F-15)", () => {
+  it("table_no가 있으면 '{n}번 테이블'을 보여 준다", () => {
+    renderWithQuery(<KitchenItemCard item={baseItem({ table_no: 7 })} />);
+    expect(screen.getByText("7번 테이블")).toBeTruthy();
+  });
+
+  it("table_no가 없으면 '테이블 -'를 보여 준다", () => {
+    renderWithQuery(<KitchenItemCard item={baseItem()} />);
+    expect(screen.getByText("테이블 -")).toBeTruthy();
+  });
+
+  it("table_no가 명시적 null이어도 '테이블 -'를 보여 준다 (서버가 null을 내려 주는 경우)", () => {
+    // 계약 타입은 number지만 서버는 null을 줄 수 있어 타입을 우회해 검증한다.
+    renderWithQuery(<KitchenItemCard item={baseItem({ table_no: null as unknown as number })} />);
+    expect(screen.getByText("테이블 -")).toBeTruthy();
+    expect(screen.queryByText(/null/)).toBeNull();
+  });
+});
+
 describe("KitchenItemCard 상태 변경 버튼", () => {
   it("pending 항목은 '조리 시작' 버튼을 누르면 PATCH로 cooking을 보낸다", async () => {
     let seenBody: unknown;

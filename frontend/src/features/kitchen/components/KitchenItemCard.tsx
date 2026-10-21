@@ -4,6 +4,7 @@
 import type { OrderItem } from "../../../api/kitchen";
 import type { ItemStatus } from "../../../constants/status";
 import { itemStatusLabel, itemActionLabel } from "../../../constants/status";
+import { tableLabel } from "../../../constants/table";
 import { useUpdateItemStatus } from "../hooks/useUpdateItemStatus";
 
 const NEXT_STATUS: Record<ItemStatus, ItemStatus | null> = {
@@ -19,6 +20,7 @@ export function KitchenItemCard({ item }: { item: OrderItem }) {
 
   return (
     <li className={`kitchen-item kitchen-item--${status}`}>
+      <span className="kitchen-item-table">{tableLabel(item.table_no)}</span>
       <div className="kitchen-item-main">
         <span className="kitchen-item-name">{item.menu_name}</span>
         <span className="kitchen-item-qty">x{item.qty}</span>

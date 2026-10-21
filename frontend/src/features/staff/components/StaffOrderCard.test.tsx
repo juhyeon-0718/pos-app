@@ -35,6 +35,26 @@ function baseOrder(overrides: Partial<Order> = {}): Order {
   };
 }
 
+describe("StaffOrderCard 테이블 번호 표시 (F-15)", () => {
+  it("table_no가 있으면 '{n}번 테이블'을 보여 주고 table_id는 보이지 않는다", () => {
+    renderWithQuery(<StaffOrderCard order={baseOrder({ table_no: 3 })} />);
+    expect(screen.getByText("3번 테이블")).toBeTruthy();
+    expect(screen.queryByText(/t_5/)).toBeNull();
+  });
+
+  it("table_no가 없으면 '테이블 -'를 보여 준다", () => {
+    renderWithQuery(<StaffOrderCard order={baseOrder()} />);
+    expect(screen.getByText("테이블 -")).toBeTruthy();
+  });
+
+  it("table_no가 명시적 null이어도 '테이블 -'를 보여 준다 (서버가 null을 내려 주는 경우)", () => {
+    // 계약 타입은 number지만 서버는 null을 줄 수 있어 타입을 우회해 검증한다.
+    renderWithQuery(<StaffOrderCard order={baseOrder({ table_no: null as unknown as number })} />);
+    expect(screen.getByText("테이블 -")).toBeTruthy();
+    expect(screen.queryByText(/null/)).toBeNull();
+  });
+});
+
 describe("StaffOrderCard 상태별 동작 버튼", () => {
   it("received 상태는 '조리 전 취소' 버튼만 있고 클릭하면 status=cancelled를 보낸다", async () => {
     let seenBody: unknown;
