@@ -55,10 +55,10 @@ describe("Button", () => {
 describe("Badge", () => {
   const cases = [
     ["received", "접수", "inbox"],
-    ["cooking", "조리중", "flame"],
-    ["served", "서빙완료", "check"],
+    ["cooking", "조리 중", "flame"],
+    ["served", "서빙 완료", "check"],
     ["paid", "결제 완료", "receipt"],
-    ["cancelled", "취소됨", "x"],
+    ["cancelled", "취소", "x"],
   ] as const;
 
   it.each(cases)("%s: 글자와 아이콘을 함께 그린다", (status, label, icon) => {
