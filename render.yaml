@@ -1,0 +1,50 @@
+# Render Blueprint (B-11, D-36): 파일럿 환경 = 백엔드 + Postgres + 프론트.
+# 절차: docs/ops/deploy-render.md. 비밀값은 이 파일에 쓰지 않는다(Render가 생성·연결).
+services:
+  # 백엔드 API (FastAPI + uvicorn)
+  - type: web
+    name: pos-app-api
+    runtime: python
+    plan: starter            # 신규 이름 0.5c-512mb와 동일(0.5 CPU, 512MB, $7/월)
+    region: singapore
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    preDeployCommand: alembic upgrade head
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: ENV
+        value: prod
+      - key: PYTHON_VERSION   # CI(Python 3.12)와 맞춘다. 생략하면 Render 기본 3.14가 쓰인다.
+        value: 3.12.11
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pos-app-db
+          property: connectionString
+
+  # 프론트 (Vite 빌드 결과를 정적 호스팅)
+  - type: web
+    name: pos-app-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    routes:
+      # 순서가 중요하다: 위에서부터 처음 맞는 규칙이 적용된다.
+      # 주의: 백엔드 실제 주소가 pos-app-api.onrender.com이 아니면(이름 중복 시 뒤에 글자가 붙음)
+      # 아래 destination을 실제 주소로 고친다. docs/ops/deploy-render.md 3단계 참고.
+      - type: rewrite
+        source: /api/*
+        destination: https://pos-app-api.onrender.com/api/*
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+databases:
+  - name: pos-app-db
+    plan: basic-256mb        # 신규 이름 0.1c-256mb와 동일(256MB RAM, $6/월 + 저장공간 $0.30/GB)
+    diskSizeGB: 1
+    postgresMajorVersion: "18"   # D-21. Render가 18 지원(13~18)
+    region: singapore
