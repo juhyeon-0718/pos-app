@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>직원 · U-03 시안 (메인 화면)</title>
+<link rel="stylesheet" href="staff.css">
+</head>
+<body>
+<header class="s-bar">
+  <img class="app-logo" src="../../brand/logo-compact-black.png" alt="75MHz LIVE PUB">
+  <h1 class="s-title">직원</h1>
+  <span class="s-spacer"></span>
+  <span class="s-conn" role="status"><i data-icon="check"></i>실시간 연결됨</span>
+  <button class="btn btn-primary btn-lg"><i data-icon="plus"></i>대리 주문</button>
+</header>
+
+<main class="s-page">
+  <div class="s-tools">
+    <div class="s-chips" role="group" aria-label="주문 상태 필터">
+      <button aria-pressed="true">전체 <span class="n">6</span></button>
+      <button aria-pressed="false"><i data-icon="inbox"></i>접수 <span class="n">1</span></button>
+      <button aria-pressed="false"><i data-icon="flame"></i>조리 중 <span class="n">2</span></button>
+      <button aria-pressed="false"><i data-icon="check"></i>서빙 완료 <span class="n">3</span></button>
+    </div>
+    <span class="muted">결제 완료·취소는 숨김</span>
+  </div>
+
+  <div class="s-grid">
+    <article class="card s-card attn" aria-label="5번 테이블, 조리 중, 서빙 가능">
+      <div class="s-head"><div class="s-table">5<small>번 테이블</small></div><span class="badge badge-lg badge-cooking"><i data-icon="flame"></i>조리 중</span></div>
+      <ul class="s-lines">
+        <li><span class="nm">김치찌개</span><span><span class="ok"><i data-icon="check"></i>완료</span><span class="q">×1</span></span></li>
+        <li><span class="nm">제육볶음</span><span><span class="ok"><i data-icon="check"></i>완료</span><span class="q">×2</span></span></li>
+      </ul>
+      <div class="s-meta"><span>18:31 접수 · 11분 경과</span></div>
+      <div class="s-foot"><span class="s-total">34,000원</span><div class="s-actions"><button class="btn btn-success btn-lg"><i data-icon="dish"></i>서빙 완료</button></div></div>
+    </article>
+
+    <article class="card s-card" aria-label="9번 테이블, 조리 중">
+      <div class="s-head"><div class="s-table">9<small>번 테이블</small></div><span class="badge badge-lg badge-cooking"><i data-icon="flame"></i>조리 중</span></div>
+      <ul class="s-lines">
+        <li><span class="nm">비빔밥</span><span><span class="q">×3</span></span></li>
+      </ul>
+      <div class="s-meta"><span>18:36 접수 · 6분 경과</span></div>
+      <div class="s-foot"><span class="s-total">30,000원</span><div class="s-actions"><span class="s-hint"><i data-icon="info"></i>조리가 끝나면 누를 수 있습니다</span><button class="btn btn-success btn-lg" disabled><i data-icon="dish"></i>서빙 완료</button></div></div>
+    </article>
+
+    <article class="card s-card" aria-label="12번 테이블, 접수">
+      <div class="s-head"><div class="s-table">12<small>번 테이블</small></div><span class="badge badge-lg badge-received"><i data-icon="inbox"></i>접수</span></div>
+      <ul class="s-lines">
+        <li><span class="nm">아주 긴 이름의 시즌 한정 메뉴 예시 (이름이 길면 줄바꿈)</span><span class="q">×1</span></li>
+        <li><span class="nm">공기밥</span><span class="q">×2</span></li>
+      </ul>
+      <div class="s-meta"><span>18:41 접수 · 1분 경과</span></div>
+      <div class="s-foot"><span class="s-total">17,000원</span><div class="s-actions"><button class="btn btn-text danger btn-lg"><i data-icon="x"></i>주문 취소</button></div></div>
+    </article>
+
+    <article class="card s-card attn" aria-label="2번 테이블, 서빙 완료, 결제 대기">
+      <div class="s-head"><div class="s-table">2<small>번 테이블</small></div><span class="badge badge-lg badge-served"><i data-icon="check"></i>서빙 완료</span></div>
+      <ul class="s-lines">
+        <li><span class="nm">된장찌개</span><span class="q">×2</span></li>
+        <li><span class="nm">공기밥</span><span class="q">×2</span></li>
+      </ul>
+      <div class="s-meta"><span>18:12 접수 · 30분 경과</span></div>
+      <div class="s-foot"><span class="s-total">19,000원</span><div class="s-actions"><button class="btn btn-primary btn-lg"><i data-icon="receipt"></i>결제 완료</button></div></div>
+    </article>
+  </div>
+</main>
+<script src="../../components/prototype/ui.js"></script>
+</body>
+</html>

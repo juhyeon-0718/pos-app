@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>공용 컴포넌트 · U-03 시안</title>
+<link rel="stylesheet" href="components.css">
+</head>
+<body>
+<main class="sheet-page">
+  <header>
+    <h1>공용 컴포넌트 시안 (U-03)</h1>
+    <p class="sub">Button · Badge · Card · Modal · 상태 표시(로딩·빈 상태·오류). 토큰은 DESIGN.md 값만 쓴다. 더미 데이터.</p>
+  </header>
+
+  <section aria-labelledby="s-btn">
+    <h2 id="s-btn">Button</h2>
+    <div class="sheet-grid">
+      <div class="card demo">
+        <h3>종류 (높이 44px)</h3>
+        <div class="row">
+          <button class="btn btn-primary">주문하기</button>
+          <button class="btn btn-secondary">취소</button>
+          <button class="btn btn-danger">주문 취소</button>
+          <button class="btn btn-text">더 보기</button>
+        </div>
+        <span class="token-chip">btn-primary / secondary / danger / text</span>
+      </div>
+      <div class="card demo">
+        <h3>비활성 · 처리 중</h3>
+        <div class="row">
+          <button class="btn btn-primary" disabled>주문하기</button>
+          <button class="btn btn-primary" aria-busy="true" disabled><i data-icon="spinner"></i>처리 중</button>
+        </div>
+        <span class="token-chip">비활성 글자 --color-text-disabled, 처리 중은 스피너 + 글자</span>
+      </div>
+      <div class="card demo">
+        <h3>큰 버튼 (손님·직원 56px)</h3>
+        <button class="btn btn-primary btn-lg btn-block"><i data-icon="check"></i>주문하기</button>
+        <button class="btn btn-success btn-lg btn-block"><i data-icon="check"></i>서빙 완료</button>
+        <span class="token-chip">--size-touch-lg 56px · 주방은 --size-touch-kitchen 88px</span>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="s-badge">
+    <h2 id="s-badge">Badge (주문 상태 5종, 색 + 아이콘 + 글자)</h2>
+    <div class="card demo">
+      <div class="row">
+        <span class="badge badge-received"><i data-icon="inbox"></i>접수</span>
+        <span class="badge badge-cooking"><i data-icon="flame"></i>조리 중</span>
+        <span class="badge badge-served"><i data-icon="check"></i>서빙 완료</span>
+        <span class="badge badge-paid"><i data-icon="receipt"></i>결제 완료</span>
+        <span class="badge badge-cancelled"><i data-icon="x"></i>취소</span>
+      </div>
+      <div class="row">
+        <span class="badge badge-lg badge-received"><i data-icon="inbox"></i>접수</span>
+        <span class="badge badge-lg badge-cooking"><i data-icon="flame"></i>조리 중</span>
+        <span class="badge badge-lg badge-served"><i data-icon="check"></i>서빙 완료</span>
+      </div>
+      <span class="token-chip">OrderStatus: received / cooking / served / paid / cancelled · 기본 13px, 손님·직원 큰 배지 16px</span>
+    </div>
+  </section>
+
+  <section aria-labelledby="s-card">
+    <h2 id="s-card">Card · Banner</h2>
+    <div class="sheet-grid">
+      <div class="card demo">
+        <h3>Card</h3>
+        <strong>3번 테이블</strong>
+        <span class="muted">크림 생맥주 ×2 · 감자튀김 ×1</span>
+        <span class="token-chip">--color-bg-default · border-light · radius-md · shadow-sm</span>
+      </div>
+      <div class="demo" style="grid-column: span 2">
+        <div class="banner banner-error" role="alert"><i data-icon="alert"></i><div class="banner-body"><div class="banner-title">주문을 보내지 못했습니다</div>네트워크를 확인하고 다시 시도해 주세요.</div><button class="btn btn-secondary">다시 시도</button></div>
+        <div class="banner banner-warning"><i data-icon="alert"></i><div class="banner-body">연결이 끊겼습니다. 다시 연결 중입니다.</div></div>
+        <div class="banner banner-info"><i data-icon="info"></i><div class="banner-body">주문이 접수되었습니다.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="s-state">
+    <h2 id="s-state">상태 표시: 로딩 · 빈 상태 · 오류</h2>
+    <div class="sheet-grid">
+      <div class="card demo" aria-busy="true"><h3>로딩 (스켈레톤)</h3><span class="skeleton" style="width:70%"></span><span class="skeleton"></span><span class="skeleton" style="width:50%"></span><div class="loading-note"><i data-icon="spinner"></i>불러오는 중</div></div>
+      <div class="card"><div class="empty" style="padding:var(--spacing-xl)"><i data-icon="inbox"></i><h2>아직 주문이 없습니다</h2><p>새 주문이 들어오면 여기에 표시됩니다.</p></div></div>
+      <div class="card"><div class="empty" style="padding:var(--spacing-xl)"><i data-icon="alert"></i><h2>불러오지 못했습니다</h2><p>네트워크를 확인하고 다시 시도해 주세요.</p><button class="btn btn-primary"><i data-icon="refresh"></i>다시 시도</button></div></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="s-modal">
+    <h2 id="s-modal">Modal (모바일은 아래에서 올라오는 시트)</h2>
+    <div class="card demo" style="background:var(--color-overlay);align-items:center">
+      <div class="modal" role="dialog" aria-labelledby="m-t" style="max-width:420px">
+        <div class="modal-title" id="m-t">주문을 보낼까요?</div>
+        <p class="modal-body">크림 생맥주 ×2, 감자튀김 ×1 · 합계 <strong>21,000원</strong><br>보낸 뒤에는 직원에게 요청해야 취소할 수 있습니다.</p>
+        <div class="modal-footer"><button class="btn btn-secondary">돌아가기</button><button class="btn btn-primary">주문 보내기</button></div>
+      </div>
+    </div>
+  </section>
+</main>
+<script src="ui.js"></script>
+</body>
+</html>
