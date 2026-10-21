@@ -48,7 +48,7 @@
 const STATES = [
   ['default','기본'],['loading','로딩'],['empty','빈 상태'],['error','불러오기 오류'],['offline','연결 끊김'],
   ['busy','처리 중'],['conflict','409 서빙 불가'],['stock','재고 부족 경고'],
-  ['cancel','취소 확인'],['cancel-locked','취소 403'],['pay','결제 확인'],['proxy','대리 주문']
+  ['cancel','취소 확인'],['cancel-locked','취소 403'],['pay','결제 확인'],['proxy','대리 주문'],['proxy-409','대리 주문 품절']
 ];
 let state = new URLSearchParams(location.search).get('state') || 'default';
 const ic = n => '<i data-icon="'+n+'"></i>';
@@ -89,10 +89,10 @@ function card(o){
     lines(o)+extra+'<div class="s-meta"><span>'+o.time+' 접수 · '+o.min+'분 경과</span></div><div class="s-foot"><span class="s-total">'+won(o.total)+'</span><div class="s-actions">'+action(o)+'</div></div></article>';
 }
 function modal(){
-  if (state==='cancel') return '<div class="overlay" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="modal"><div class="modal-title" id="mt">12번 테이블 주문을 취소할까요?</div><div class="modal-body">접수된 주문 17,000원이 취소됩니다. 사용한 재료는 재고로 돌아갑니다.<br>취소한 주문은 되돌릴 수 없습니다.</div><div class="modal-footer modal-lg-btns"><button class="btn btn-secondary">돌아가기</button><button class="btn btn-danger">'+ic('x')+'주문 취소</button></div></div></div>';
+  if (state==='cancel') return '<div class="overlay" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="modal"><div class="modal-title" id="mt">12번 테이블 주문을 취소할까요?</div><div class="modal-body">접수된 주문 17,000원이 취소됩니다.<br>취소한 주문은 되돌릴 수 없습니다.</div><div class="modal-footer modal-lg-btns"><button class="btn btn-secondary">돌아가기</button><button class="btn btn-danger">'+ic('x')+'주문 취소</button></div></div></div>';
   if (state==='pay') return '<div class="overlay" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="modal"><div class="modal-title" id="mt">2번 테이블 결제를 완료할까요?</div><div class="modal-body">합계 <strong>19,000원</strong>을 받으셨는지 확인해 주세요.<br>결제 완료 후에는 상태를 바꿀 수 없습니다.</div><div class="modal-footer modal-lg-btns"><button class="btn btn-secondary">돌아가기</button><button class="btn btn-primary">'+ic('receipt')+'결제 완료</button></div></div></div>';
-  if (state==='proxy') return '<div class="overlay" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="modal" style="max-width:640px"><div class="modal-title" id="mt">대리 주문</div><div class="field-label" style="margin-bottom:8px">테이블</div><div class="tbl-grid">'+[1,2,3,4,5,6,7,8,9,10,11,12].map(n=>'<button aria-pressed="'+(n===7)+'">'+n+'</button>').join('')+'</div>'+
-    '<div class="field-label">메뉴</div>'+[['김치찌개',9000,2],['제육볶음',11000,0],['공기밥',1000,2]].map(m=>'<div class="proxy-row"><span>'+m[0]+' <span class="muted">'+won(m[1])+'</span></span><span class="qty"><button aria-label="'+m[0]+' 빼기">'+ic('minus')+'</button><output>'+m[2]+'</output><button aria-label="'+m[0]+' 더하기">'+ic('plus')+'</button></span></div>').join('')+
+  if (state==='proxy'||state==='proxy-409') return '<div class="overlay" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="modal" style="max-width:640px"><div class="modal-title" id="mt">대리 주문</div>'+(state==='proxy-409'?'<div class="banner banner-error" role="alert" style="margin-bottom:16px">'+ic('alert')+'<div class="banner-body"><div class="banner-title">제육볶음은 방금 품절되어 주문할 수 없습니다</div>메뉴를 새로 불러왔습니다. 나머지 메뉴로 다시 넣어 주세요.</div></div>':'')+'<div class="field-label" style="margin-bottom:8px">테이블</div><div class="tbl-grid">'+[1,2,3,4,5,6,7,8,9,10,11,12].map(n=>'<button aria-pressed="'+(n===7)+'">'+n+'</button>').join('')+'</div>'+
+    '<div class="field-label">메뉴</div>'+[['김치찌개',9000,2],...(state==='proxy-409'?[]:[['제육볶음',11000,0]]),['공기밥',1000,2]].map(m=>'<div class="proxy-row"><span>'+m[0]+' <span class="muted">'+won(m[1])+'</span></span><span class="qty"><button aria-label="'+m[0]+' 빼기">'+ic('minus')+'</button><output>'+m[2]+'</output><button aria-label="'+m[0]+' 더하기">'+ic('plus')+'</button></span></div>').join('')+
     '<div class="total-row" style="padding:var(--spacing-lg) 0 0;font-size:var(--font-size-xl);display:flex;justify-content:space-between;font-weight:700"><span>합계</span><span>20,000원</span></div><div class="modal-footer modal-lg-btns" style="margin-top:var(--spacing-lg)"><button class="btn btn-secondary">닫기</button><button class="btn btn-primary">'+ic('check')+'7번 테이블 주문 넣기</button></div></div></div>';
   return '';
 }
