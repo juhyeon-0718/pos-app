@@ -7,7 +7,7 @@ export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   received: "접수",
   cooking: "조리중",
   served: "서빙완료",
-  paid: "결제완료",
+  paid: "결제 완료", // U-03 명세 표기(D-33). 나머지 라벨은 F-11에서 정리
   cancelled: "취소됨",
 };
 
