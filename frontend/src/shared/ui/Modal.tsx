@@ -16,7 +16,7 @@ const FOCUSABLE =
 
 /**
  * 모달: 포커스를 가두고, Esc로 닫고, 닫은 뒤 열었던 요소로 포커스를 돌려준다.
- * 모바일(480px 이하)은 아래에서 올라오는 시트로 보인다(CSS).
+ * 휴대폰(767px 이하, D-39)은 아래에서 올라오는 시트로 보인다(CSS).
  */
 export function Modal({ title, children, footer, onClose, busy = false }: ModalProps) {
   const titleId = useId();

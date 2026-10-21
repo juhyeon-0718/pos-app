@@ -69,7 +69,7 @@
 .ui-modal-body { margin-bottom: var(--spacing-lg); line-height: var(--line-height-relaxed); }
 .ui-modal-footer { display: flex; justify-content: flex-end; gap: var(--gap-md); }
 /* 모바일: 아래에서 올라오는 시트 */
-@media (max-width: 480px) { /* = --size-phone-max */
+@media (max-width: 767px) { /* 휴대폰 기준(D-39): 768px 이상이 태블릿 */
   .ui-overlay { align-items: flex-end; padding: 0; }
   .ui-modal { max-width: none; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
 }
