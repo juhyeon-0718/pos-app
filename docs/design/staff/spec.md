@@ -14,12 +14,10 @@
 `--size-touch-lg`, `--font-size-3xl/xl/lg`, `--color-primary`, 공용 Badge(주문 상태 5종), Button, Card(U-03 components).
 
 ## 데이터 (openapi.yaml 기준)
-Order: `id`, `table_id`, `status`, `total_amount`, `created_at`, `items[]`(`menu_name`, `qty`, `item_status`), `stock_warnings[]`. 상태 변경은 `PATCH /orders/{order_id}/status`(received→cooking→served→paid, cancelled).
+Order: `id`, `table_no`, `status`, `total_amount`, `created_at`, `items[]`(`menu_name`, `qty`, `item_status`), `stock_warnings[]`(직원·사장용). 상태 변경은 `PATCH /orders/{order_id}/status`(received→cooking→served→paid, cancelled).
 
-## 계약 요청 (민준 님께)
-1. Order에 `table_no`가 필요하다(주방 요청 1번과 같음).
-2. 직원 대리 주문 화면의 테이블 선택은 `GET /tables`로 가능하다. 대리 주문 화면은 U-05 상세 명세에서 다룬다.
-3. `stock_warnings[]` 표시 위치(카드 배너)는 상세 명세에서 정한다.
+## 계약 요청
+없음. `table_no`는 계약에 이미 있다. 대리 주문 화면의 테이블 선택(`GET /tables`)과 `stock_warnings[]` 표시 위치(카드 배너)는 U-05 상세 명세에서 정한다.
 
 ## 대비
 상태 배지 대비는 `../components/spec.md`. 칩 선택 상태는 `--color-primary` on `--color-info-light` 5.03:1. 직접 계산한 값이며 도구 검증 전.

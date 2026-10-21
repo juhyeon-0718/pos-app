@@ -15,13 +15,13 @@
 `--font-size-kitchen-title/body/meta`, `--size-touch-kitchen`, `--color-warning`, `--color-success`, `--color-success-hover`, `--color-primary`, `--border-default`, 공용 Button·Badge·Card(U-03 components).
 
 ## 데이터 (openapi.yaml 기준)
-- Order: `id`, `table_id`, `status`, `created_at`, `items[]`(`menu_name`, `qty`, `item_status`).
+- Order: `id`, `table_no`, `status`, `created_at`, `items[]`(`menu_name`, `qty`, `item_status`, `table_no`). 화면에는 `table_id` 대신 `table_no`를 보여 준다.
+- 항목 단위 조리 처리: `PATCH /kitchen/items/{item_id}/status`(updateKitchenItemStatus).
 - 경과 시간은 `created_at`에서 클라이언트가 계산한다.
 - 갱신: `GET /stream/orders` (SSE).
 
-## 계약 요청 (민준 님께, 직접 수정하지 않음)
-1. 화면에 "3번 테이블"을 표시하려면 Order에 `table_no`가 필요하다. 현재는 `table_id`만 있고 주방 토큰으로 `/tables`를 조회할 수 있는지도 불명확하다.
-2. 항목 단위 조리 완료(`item_status`)를 주방이 바꾸는 엔드포인트가 명시돼 있지 않다. 이번 시안은 주문 단위 버튼만 둔다.
+## 계약 요청
+없음. 민준 님 대조 결과 `table_no`와 항목 상태 변경 엔드포인트는 이미 계약에 있다. 이번 시안은 주문 단위 버튼만 두고, 항목 단위 처리 UI는 U-04 상세 명세에서 정한다.
 
 ## 대비
 본문 `--color-text-primary` on 흰색 16.1:1, "지연" `--color-warning-text` on `--color-warning-light` 7.41:1, 흰 글자 on 버튼 5.13~5.75:1. 직접 계산한 값이며 도구 검증 전.
