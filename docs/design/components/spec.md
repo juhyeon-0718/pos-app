@@ -7,7 +7,7 @@
 Button, Badge(주문 상태), Card, Banner, Modal, 상태 표시(로딩·빈 상태·오류). F-09(`shared/ui/`) 추출 범위와 같다. 다른 컴포넌트는 화면 작업 중 3곳 이상 반복될 때만 추가한다.
 
 ## 컴포넌트와 토큰
-- **Button** `primary / secondary / danger / success / text`. 높이 `--size-control-height` 44px, 큰 버튼 `--size-touch-lg` 56px(손님·직원), 주방 `--size-touch-kitchen` 88px. 비활성은 `--color-bg-disabled` + `--color-text-disabled`, 처리 중은 스피너 + 글자 + `aria-busy`.
+- **Button** `primary / secondary / danger / success / text`. 높이 `--size-control-height` 44px, 큰 버튼 `--size-touch-lg` 56px(손님·직원), 주방 `--size-touch-kitchen` 56px(휴대폰)/72px(태블릿 이상). 비활성은 `--color-bg-disabled` + `--color-text-disabled`, 처리 중은 스피너 + 글자 + `aria-busy`.
 - **Badge** 주문 상태 5종(openapi `OrderStatus`). 색 + 아이콘 + 글자를 항상 함께 쓴다.
   - received 접수(inbox, `--color-info-light`/`--color-info`)
   - cooking 조리 중(flame, `--color-warning-light`/`--color-warning-text`, 테두리 `--color-warning`)
@@ -17,11 +17,11 @@ Button, Badge(주문 상태), Card, Banner, Modal, 상태 표시(로딩·빈 상
   - 기본 13px, 손님·직원 큰 배지 16px(`badge-lg`).
 - **Card** `--color-bg-default`, `--border-thin` `--color-border-light`, `--radius-md`, `--shadow-sm`. 주의가 필요한 카드(직원: 처리할 차례)는 `--border-default` `--color-primary` 테두리.
 - **Banner** error / warning / info. 오류는 `role="alert"` 배너로 남기고 자동으로 사라지는 토스트에 쓰지 않는다.
-- **Modal** 데스크톱은 가운데(`--size-modal-max`), 모바일은 아래 시트(`--size-phone-max`). 포커스 가두기, Esc 닫기, 닫은 뒤 열었던 버튼으로 복귀.
+- **Modal** 태블릿 이상(768px 이상)은 가운데(`--size-modal-max`), 휴대폰(767px 이하)은 아래에서 올라오는 시트(최대 너비 `--size-phone-max`). 기준 폭은 `@media (max-width: 767px)` 하나(D-39). 포커스 가두기, Esc 닫기, 닫은 뒤 열었던 버튼으로 복귀.
 - **상태 표시** 로딩(스켈레톤 + "불러오는 중"), 빈 상태(아이콘 + 제목 + 한 줄 안내), 오류(경고 아이콘 + 문장 + "다시 시도").
 
 ## 이번 시안에서 추가한 토큰 (DESIGN.md와 admin.css에 함께 반영)
-`--color-success-hover` #1b5e20(흰 글자 7.87:1), `--size-touch-lg` 56px, `--size-touch-kitchen` 88px, `--size-phone-max` 480px, `--font-size-kitchen-meta` 32px, `--font-size-kitchen-body` 59px(44pt), `--font-size-kitchen-title` 72px.
+`--color-success-hover` #1b5e20(흰 글자 7.87:1), `--size-touch-lg` 56px, `--size-touch-kitchen` 56px/72px, `--size-phone-max` 480px, `--font-size-kitchen-meta` 16px/20px, `--font-size-kitchen-body` 24px/32px, `--font-size-kitchen-title` 36px/48px(앞 값 휴대폰, 뒤 값 태블릿 이상. U-04b에서 주방 값을 기기별로 조정).
 
 ## 대비 (WCAG 2.1 공식으로 직접 계산, 도구 검증 전)
 - 흰 글자 on `--color-success-hover` 7.87:1, `--color-success` 5.13:1, `--color-primary` 5.75:1.
