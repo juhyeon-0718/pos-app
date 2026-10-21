@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>손님 QR 주문 상태별 시안 · U-06</title>
+<link rel="stylesheet" href="customer.css">
+<style>
+  .proto-bar { position: sticky; top: 0; z-index: 400; background: var(--color-bg-default); border-bottom: var(--border-thin) dashed var(--color-border-strong); padding: var(--spacing-sm) var(--spacing-md); display: flex; flex-wrap: wrap; gap: var(--gap-sm); align-items: center; max-height: 38vh; overflow-y: auto; }
+  .proto-bar b { font-size: var(--font-size-sm); color: var(--color-text-secondary); width: 100%; }
+  .proto-bar button { min-height: var(--size-touch-min); padding: 0 var(--spacing-md); font: inherit; font-size: var(--font-size-sm); background: var(--color-bg-default); border: var(--border-thin) solid var(--color-border-strong); border-radius: var(--radius-full); cursor: pointer; }
+  .proto-bar button[aria-pressed="true"] { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-text-on-fill); }
+  .c-sub { display: flex; align-items: center; gap: var(--gap-sm); min-height: 56px; padding: 0 var(--spacing-sm); }
+  .c-back { display: inline-flex; align-items: center; justify-content: center; width: var(--size-touch-min); height: var(--size-touch-min); background: none; border: 0; color: var(--color-text-primary); cursor: pointer; }
+  .c-back .icon { width: 24px; height: 24px; }
+  .c-state { display: flex; flex-direction: column; align-items: center; gap: var(--gap-md); padding: 56px var(--spacing-lg); text-align: center; }
+  .c-state .icon { width: 48px; height: 48px; color: var(--color-text-secondary); }
+  .c-state .btn .icon, .c-state .badge .icon { width: 20px; height: 20px; color: inherit; }
+  .c-state .badge .icon { width: 36px; height: 36px; }
+  .c-state h2 { font-size: var(--font-size-xl); }
+  .c-state p { color: var(--color-text-secondary); line-height: var(--line-height-relaxed); }
+  .c-skel { height: 72px; border-radius: var(--radius-md); background: var(--color-border-light); animation: pulse 1.4s ease-in-out infinite; }
+  .c-main .banner { margin: 0; }
+  .max-note { color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+  .order-card .badge { font-size: var(--font-size-base); }
+  .steps .icon { width: 16px; height: 16px; vertical-align: -3px; margin-right: 2px; }
+  .refresh-note { display: flex; align-items: center; justify-content: space-between; gap: var(--gap-md); color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+  .cart-row .menu-name { -webkit-line-clamp: 3; }
+  .sheet-note { color: var(--color-text-secondary); font-size: var(--font-size-sm); margin-top: var(--spacing-sm); }
+  .toast-area { bottom: 24px; }
+</style>
+</head>
+<body>
+<div class="proto-bar" id="bar"></div>
+<div class="phone" id="phone"></div>
+<div id="layer"></div>
+<script src="../../components/prototype/ui.js"></script>
+<script>
+/* 데이터 필드: openapi Menu(name, price, category, is_active) / Order(status, total_amount, created_at, items[menu_name, qty, item_status]). 값은 모두 더미.
+   카테고리 표시 이름은 category 값("main","side" 등)을 프론트 매핑 테이블로 한글 변환한다(D-18과 같은 방식). 주류 2종은 판매가 미정이라 더미. */
+const STATES = [
+  ['menu','메뉴 기본'],['menu-loading','메뉴 로딩'],['menu-empty','메뉴 빈 상태'],['menu-error','메뉴 오류'],['session','세션 종료(401)'],
+  ['cart','장바구니'],['cart-empty','장바구니 빈 상태'],['cart-max','수량 20 제한'],
+  ['confirm','주문 확인'],['submitting','전송 중'],['submit-error','전송 실패'],['submit-409','메뉴 품절(409)'],['submit-422','접수 확인 필요(422)'],['done','주문 완료'],
+  ['status','주문 상태'],['status-loading','상태 로딩'],['status-empty','상태 빈 상태'],['status-error','상태 오류'],['status-end','취소 주문']
+];
+let state = new URLSearchParams(location.search).get('state') || 'menu';
+const ic = n => '<i data-icon="'+n+'"></i>';
+const esc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const won = n => n.toLocaleString('ko-KR')+'원';
+const MENUS = {
+  '메인': [['오늘의 플레이트',15000]],
+  '사이드': [['마른안주',10000],['올리브마리네이트',10000],['치즈 플레이트',10000],['버팔로 윙',10000],['참치마요 카나페',4000]],
+  '주류': [['생맥주 500cc (더미)',5000],['하이볼 (더미)',6000]]
+};
+const CART = [['오늘의 플레이트',15000,1],['버팔로 윙',10000,2],['참치마요 카나페',4000,1]];
+const total = CART.reduce((s,c)=>s+c[1]*c[2],0), count = CART.reduce((s,c)=>s+c[2],0);
+
+function header(active, withTabs=true){
+  return '<header class="c-bar"><div class="c-bar-top"><img class="app-logo" src="../../brand/logo-compact-black.png" alt="75MHz LIVE PUB"></div>'+
+  (withTabs?'<div class="c-tabs" role="tablist"><button role="tab" aria-selected="'+(active==='menu')+'">메뉴</button><button role="tab" aria-selected="'+(active==='status')+'">주문 내역</button></div>':'')+'</header>';
+}
+function subHeader(title){ return '<header class="c-bar"><div class="c-sub"><button class="c-back" aria-label="메뉴로 돌아가기">'+ic('x')+'</button><span class="c-title">'+title+'</span></div></header>'; }
+function menuRow(m, q){
+  const act = q>0 ? '<div class="qty" role="group" aria-label="'+esc(m[0])+' 수량"><button aria-label="'+esc(m[0])+' 하나 빼기">'+ic('minus')+'</button><output aria-live="polite">'+q+'</output><button aria-label="'+esc(m[0])+' 하나 더하기">'+ic('plus')+'</button></div>' : '<button class="btn btn-secondary menu-add">'+ic('plus')+'담기</button>';
+  return '<div class="card menu-row"><div class="menu-info"><div class="menu-name">'+esc(m[0])+'</div><div class="menu-price">'+won(m[1])+'</div></div>'+act+'</div>';
+}
+const QTY = {'오늘의 플레이트':1,'버팔로 윙':2,'참치마요 카나페':1};
+function dock(label, right, disabled, extra){ return '<div class="dock">'+(extra||'')+'<button class="btn btn-primary"'+(disabled?' disabled':'')+'><span style="display:inline-flex;align-items:center;gap:8px">'+label+'</span><span>'+right+'</span></button></div>'; }
+function cartDock(){ return dock(ic('cart')+'장바구니 보기 <span class="cnt">'+count+'</span>', won(total)); }
+
+function menuBody(){
+  if (state==='menu-loading') return '<main class="c-main" aria-busy="true"><div class="loading-note" role="status" style="border:0">'+ic('spinner')+'메뉴를 불러오는 중</div><span class="c-skel"></span><span class="c-skel"></span><span class="c-skel"></span><span class="c-skel"></span></main>'+dock(ic('cart')+'장바구니 보기 <span class="cnt">0</span>','0원',true);
+  if (state==='menu-empty') return '<main class="c-main"><div class="card c-state">'+ic('utensils')+'<h2>지금 주문할 수 있는 메뉴가 없습니다</h2><p>직원에게 말씀해 주세요.</p></div></main>'+dock(ic('cart')+'장바구니 보기 <span class="cnt">0</span>','0원',true);
+  if (state==='menu-error') return '<main class="c-main"><div class="card c-state">'+ic('alert')+'<h2>메뉴를 불러오지 못했습니다</h2><p>네트워크를 확인하고 다시 시도해 주세요.</p><button class="btn btn-primary btn-lg">'+ic('refresh')+'다시 시도</button></div></main>'+dock(ic('cart')+'장바구니 보기 <span class="cnt">0</span>','0원',true);
+  let h='<div class="c-chips" role="group" aria-label="카테고리"><button aria-pressed="true">전체</button>'+Object.keys(MENUS).map(k=>'<button aria-pressed="false">'+k+'</button>').join('')+'</div><main class="c-main">';
+  for (const k in MENUS){ h+='<h2 class="c-section">'+k+'</h2>'+MENUS[k].map(m=>menuRow(m,QTY[m[0]]||0)).join(''); }
+  return h+'</main>'+cartDock();
+}
+function cartRows(max){
+  return CART.map((c,i)=>{ const q = (max&&i===1)?20:c[2]; return '<div class="card cart-row"><div class="menu-info"><div class="menu-name">'+esc(c[0])+'</div><div class="menu-price">'+won(c[1])+'</div></div><div class="qty" role="group" aria-label="'+esc(c[0])+' 수량"><button aria-label="'+esc(c[0])+' 하나 빼기">'+ic('minus')+'</button><output>'+q+'</output><button aria-label="'+esc(c[0])+' 하나 더하기"'+((max&&i===1)?' disabled':'')+'>'+ic('plus')+'</button></div><div class="cart-line" style="grid-column:1/-1">'+((max&&i===1)?'<span class="max-note">최대 20개까지 담을 수 있습니다 · </span>':'')+won(c[1]*q)+'</div></div>'; }).join('');
+}
+function cartBody(){
+  if (state==='cart-empty') return subHeader('장바구니')+'<main class="c-main"><div class="card c-state">'+ic('cart')+'<h2>담은 메뉴가 없습니다</h2><p>메뉴에서 먹고 싶은 것을 담아 주세요.</p><button class="btn btn-secondary btn-lg">'+ic('utensils')+'메뉴 보기</button></div></main>'+dock('주문하기','0원',true);
+  const max = state==='cart-max'; const t = max ? total-10000*2+10000*20 : total;
+  return subHeader('장바구니')+'<main class="c-main">'+cartRows(max)+'<div class="card"><div class="total-row"><span>합계</span><span>'+won(t)+'</span></div></div><p class="note">주문을 보낸 뒤에는 직원에게 말씀해야 취소할 수 있습니다.</p></main>'+dock(ic('check')+'주문하기', won(t));
+}
+function sheet(inner){ return '<div class="overlay sheet" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="modal">'+inner+'</div></div>'; }
+function confirmSheet(){
+  const items = '<ul class="item-list" style="margin-bottom:12px">'+CART.map(c=>'<li><span class="nm">'+esc(c[0])+' ×'+c[2]+'</span><span>'+won(c[1]*c[2])+'</span></li>').join('')+'</ul>';
+  const sum = '<div class="total-row" style="padding:12px 0;border-top:1px solid var(--color-border-light)"><span>합계</span><span>'+won(total)+'</span></div>';
+  let banner = '', footer;
+  if (state==='submit-error') banner = '<div class="banner banner-error" role="alert">'+ic('alert')+'<div class="banner-body"><div class="banner-title">주문을 보내지 못했습니다</div>네트워크를 확인하고 다시 눌러 주세요. 주문이 두 번 들어가지 않습니다.</div></div>';
+  if (state==='submit-422') banner = '<div class="banner banner-warning" role="alert">'+ic('alert')+'<div class="banner-body"><div class="banner-title">방금 보낸 주문이 이미 접수되었을 수 있습니다</div>다시 보내기 전에 주문 내역에서 먼저 확인해 주세요.</div></div>';
+  if (state==='submit-409') banner = '<div class="banner banner-error" role="alert">'+ic('alert')+'<div class="banner-body"><div class="banner-title">버팔로 윙은 방금 품절되었습니다</div>장바구니에서 뺐습니다. 나머지 메뉴로 다시 확인해 주세요.</div></div>';
+  if (state==='submitting') footer = '<button class="btn btn-secondary" disabled>돌아가기</button><button class="btn btn-primary" disabled aria-busy="true">'+ic('spinner')+'보내는 중</button>';
+  else if (state==='submit-422') footer = '<button class="btn btn-secondary">돌아가기</button><button class="btn btn-primary">'+ic('receipt')+'주문 내역 보기</button>';
+  else if (state==='submit-409') footer = '<button class="btn btn-primary">장바구니로 돌아가기</button>';
+  else footer = '<button class="btn btn-secondary">돌아가기</button><button class="btn btn-primary">'+ic(state==='submit-error'?'refresh':'check')+(state==='submit-error'?'다시 보내기':'주문 보내기')+'</button>';
+  let t='주문을 보낼까요?', ci = items, cs = sum;
+  if (state==='submit-409'){ ci = '<ul class="item-list" style="margin-bottom:12px">'+CART.filter(c=>c[0]!=='버팔로 윙').map(c=>'<li><span class="nm">'+esc(c[0])+' ×'+c[2]+'</span><span>'+won(c[1]*c[2])+'</span></li>').join('')+'</ul>'; cs = '<div class="total-row" style="padding:12px 0;border-top:1px solid var(--color-border-light)"><span>합계</span><span>'+won(19000)+'</span></div>'; }
+  return sheet('<div class="modal-title" id="mt">'+t+'</div><div class="modal-body">'+banner+(banner?'<div style="height:12px"></div>':'')+(state==='submit-409'?2:count)+'개'+'<div style="height:8px"></div>'+ci+cs+'</div><div class="modal-footer stack-btn">'+footer+'</div>');
+}
+function doneBody(){
+  return header('menu',false)+'<main class="c-main"><div class="card c-state" role="status"><span class="badge badge-served" style="padding:12px">'+ic('check')+'</span><h2>주문이 접수되었습니다</h2><p>조리가 시작되면 "주문 내역"에서 진행 상태를 볼 수 있습니다.</p><button class="btn btn-primary btn-lg btn-block">'+ic('receipt')+'주문 내역 보기</button><button class="btn btn-secondary btn-lg btn-block">더 주문하기</button></div></main>';
+}
+function orderCard(o){
+  const BADGE={received:['badge-received','inbox','접수'],cooking:['badge-cooking','flame','조리 중'],served:['badge-served','check','서빙 완료'],paid:['badge-paid','receipt','결제 완료'],cancelled:['badge-cancelled','x','취소']};
+  const b=BADGE[o.st]; const idx={received:0,cooking:1,served:2}[o.st];
+  const steps = idx===undefined ? '' : '<ol class="steps" aria-label="진행 단계">'+['접수','조리 중','서빙 완료'].map((s,i)=>'<li class="'+(i<idx?'done':(i===idx?'now':''))+'">'+(i<idx?ic('check'):'')+s+'</li>').join('')+'</ol>';
+  const items = '<ul class="item-list">'+o.items.map(i=>'<li><span class="nm">'+esc(i[0])+' ×'+i[1]+'</span><span class="item-st">'+(i[2]==='done'?'조리 완료':(i[2]==='cooking'?'조리 중':'대기'))+'</span></li>').join('')+'</ul>';
+  return '<article class="card order-card"><div class="order-head"><span class="badge badge-lg '+b[0]+'">'+ic(b[1])+b[2]+'</span><span class="order-time">'+o.time+'</span></div>'+steps+items+(o.note?'<p class="note">'+o.note+'</p>':'')+'<div class="total-row" style="padding:12px 0 0;border-top:1px solid var(--color-border-light)"><span>합계</span><span>'+won(o.total)+'</span></div></article>';
+}
+function statusBody(){
+  const head = header('status');
+  if (state==='status-loading') return head+'<main class="c-main" aria-busy="true"><div class="loading-note" role="status" style="border:0">'+ic('spinner')+'주문 내역을 불러오는 중</div><span class="c-skel" style="height:200px"></span></main>';
+  if (state==='status-empty') return head+'<main class="c-main"><div class="card c-state">'+ic('receipt')+'<h2>아직 주문 내역이 없습니다</h2><p>메뉴에서 주문하면 여기에서 진행 상태를 볼 수 있습니다.</p><button class="btn btn-primary btn-lg">'+ic('utensils')+'메뉴 보기</button></div></main>';
+  if (state==='status-error') return head+'<main class="c-main"><div class="banner banner-error" role="alert">'+ic('alert')+'<div class="banner-body"><div class="banner-title">주문 내역을 새로 불러오지 못했습니다</div>마지막으로 본 내용을 보여 드립니다. 10초마다 다시 시도합니다.</div><button class="btn btn-secondary">'+ic('refresh')+'지금 다시</button></div><div class="refresh-note">'+ic('clock')+'18:41 기준</div>'+orderCard({st:'cooking',time:'18:36',total:39000,items:[['오늘의 플레이트',1,'cooking'],['버팔로 윙',2,'done'],['참치마요 카나페',1,'pending']]})+'</main>';
+  if (state==='status-end') return head+'<main class="c-main">'+orderCard({st:'cancelled',time:'18:20',total:10000,items:[['치즈 플레이트',1,'pending']],note:'직원이 주문을 취소했습니다. 궁금한 점은 직원에게 말씀해 주세요.'})+orderCard({st:'served',time:'18:12',total:20000,items:[['마른안주',1,'done'],['올리브마리네이트',1,'done']]})+'</main>';
+  return head+'<main class="c-main"><div class="refresh-note">'+ic('clock')+'18:42 기준 · 10초마다 자동 갱신</div>'+orderCard({st:'cooking',time:'18:36',total:39000,items:[['오늘의 플레이트',1,'cooking'],['버팔로 윙',2,'done'],['참치마요 카나페',1,'pending']]})+orderCard({st:'served',time:'18:12',total:20000,items:[['치즈 플레이트',1,'done'],['올리브마리네이트',1,'done']]})+'</main>';
+}
+function sessionBody(){ return header('menu',false)+'<main class="c-main"><div class="card c-state">'+ic('lock')+'<h2>주문 시간이 지났거나 QR이 바뀌었습니다</h2><p>QR 코드를 다시 찍어 주세요. 계속 안 되면 직원에게 말씀해 주세요.</p></div></main>'; }
+
+function render(){
+  const p = document.getElementById('phone'), layer = document.getElementById('layer');
+  let html='', lay='';
+  if (state.startsWith('menu')) html = header('menu')+menuBody();
+  else if (state==='session') html = sessionBody();
+  else if (state.startsWith('cart')) html = cartBody();
+  else if (['confirm','submitting','submit-error','submit-409','submit-422'].includes(state)) { html = cartBody(); lay = confirmSheet(); }
+  else if (state==='done') html = doneBody();
+  else html = statusBody();
+  p.innerHTML = html; layer.innerHTML = lay; UI.run();
+  document.querySelectorAll('#bar button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.k===state));
+}
+document.getElementById('bar').innerHTML='<b>상태 보기</b>'+STATES.map(s=>'<button data-k="'+s[0]+'" aria-pressed="false">'+s[1]+'</button>').join('');
+document.getElementById('bar').addEventListener('click',e=>{const k=e.target.dataset&&e.target.dataset.k; if(k){state=k;history.replaceState(null,'','?state='+k);render();}});
+render();
+</script>
+</body>
+</html>
