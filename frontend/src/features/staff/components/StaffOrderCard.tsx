@@ -6,6 +6,7 @@
 
 import type { Order } from "../../../api/orders";
 import { orderStatusLabel, itemStatusLabel, type OrderStatus, type ItemStatus } from "../../../constants/status";
+import { tableLabel } from "../../../constants/table";
 import { useUpdateOrderStatus } from "../hooks/useUpdateOrderStatus";
 import { StockWarningList } from "./StockWarningList";
 
@@ -25,7 +26,7 @@ export function StaffOrderCard({ order }: { order: Order }) {
   return (
     <li className={`staff-order-card staff-order-card--${status}`}>
       <div className="staff-order-header">
-        <span className="staff-order-table">테이블 {order.table_id}</span>
+        <span className="staff-order-table">{tableLabel(order.table_no)}</span>
         <span className="staff-order-status">{orderStatusLabel(status)}</span>
       </div>
       <ul className="staff-order-items">

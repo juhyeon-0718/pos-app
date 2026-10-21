@@ -44,6 +44,11 @@
   opacity: 0.6;
 }
 
+.kitchen-item-table {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+}
+
 .kitchen-item-main {
   display: flex;
   justify-content: space-between;
