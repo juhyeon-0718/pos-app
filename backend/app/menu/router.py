@@ -36,9 +36,9 @@ def update_menu(menu_id: str, body: MenuWriteIn, db: Session = Depends(get_db), 
 
 
 @router.delete("/menus/{menu_id}", status_code=204)
-def deactivate_menu(menu_id: str, db: Session = Depends(get_db), _owner=Depends(require_owner)):
+def delete_menu(menu_id: str, db: Session = Depends(get_db), _owner=Depends(require_owner)):
     try:
-        service.deactivate_menu(db, menu_id)
+        service.delete_menu(db, menu_id)
     except service.NotFound as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from None
 

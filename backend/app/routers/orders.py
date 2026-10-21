@@ -56,6 +56,12 @@ def create_order(
             status_code=422,
             detail={"code": "IDEMPOTENCY_KEY_MISMATCH", "detail": "Idempotency-Key conflict: request body differs from original"},
         ) from None
+    except order_service.MenuUnavailable as exc:
+        # 계약 Error 스키마({code, detail})를 응답 최상위에 둔다.
+        return JSONResponse(
+            status_code=409,
+            content={"code": "MENU_UNAVAILABLE", "detail": f"품절되었거나 삭제된 메뉴가 있어 주문할 수 없습니다: {exc}"},
+        )
     except order_service.NotFound as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from None
     return _serialize(order)
